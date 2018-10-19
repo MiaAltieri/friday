@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# cLion specific things
+.idea
+build/
