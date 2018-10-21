@@ -4,7 +4,9 @@ from build import FRIDAY
 class ActiveRegionOptions(object):
     MIN_REGION_SIZE = 80
     MAX_REGION_SIZE = 1000
-    REGION_EXPANSION = 25
+    REGION_EXPANSION = 0
+    MIN_MAPPING_QUALITY = 20
+    MIN_BASE_QUALITY = 20
     # the linear regression model is used inside C++ code
 
 
@@ -19,7 +21,11 @@ class ActiveRegionFinder:
     def find_active_region(self):
         # get the reads from the bam file
         bam_handler = FRIDAY.BAM_handler(self.bam_file_path)
-        reads = bam_handler.get_reads(self.contig, self.region_start, self.region_end)
+        reads = bam_handler.get_reads(self.contig,
+                                      self.region_start,
+                                      self.region_end,
+                                      ActiveRegionOptions.MIN_MAPPING_QUALITY,
+                                      ActiveRegionOptions.MIN_BASE_QUALITY)
 
         # get the reference from the fasta file
         fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)

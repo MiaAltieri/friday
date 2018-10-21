@@ -89,7 +89,6 @@ void ActiveRegionFinder::update_weights(type_read &read, vector<float> &weight_v
                 break;
 
         }
-
     }
 }
 
@@ -97,8 +96,7 @@ vector< pair<long long, long long> > ActiveRegionFinder::find_active_region(vect
     vector<float> weight_vector(region_end - region_start + 1, ActiveRegionFinder_options::bias);
 
     for(auto &read:reads) {
-        if(read.mapping_quality > ActiveRegionFinder_options::min_mapping_quality)
-            update_weights(read, weight_vector);
+        update_weights(read, weight_vector);
     }
 
     vector<long long> positions;
@@ -114,7 +112,6 @@ vector< pair<long long, long long> > ActiveRegionFinder::find_active_region(vect
 
     long long start_pos = -1;
     long long end_pos = -1;
-    sort(positions.begin(), positions.end());
 
     for(auto &pos: positions) {
         if(start_pos == -1) {

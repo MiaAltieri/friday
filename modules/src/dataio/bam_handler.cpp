@@ -79,7 +79,6 @@ vector<type_sequence> BAM_handler::get_chromosome_sequence_names_with_length() {
         exit (EXIT_FAILURE);
     }
 
-
     // Get all the sequence names. These are the chromosome names from the bed header file.
     vector<type_sequence> sequence_names;
     int total_targets = header->n_targets;
@@ -114,7 +113,7 @@ vector<string> BAM_handler::get_chromosome_sequence_names() {
     return sequence_names;
 }
 
-vector<type_read> BAM_handler::get_reads(string chromosome, long long start, long long stop) {
+vector<type_read> BAM_handler::get_reads(string chromosome, long long start, long long stop, int min_mapq=0, int min_baseq = 0) {
     vector <type_read> reads;
 
     // Setting up the header
@@ -143,7 +142,7 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         }
 
         // mapping quality
-        if(alignment->core.qual <= 0){
+        if(alignment->core.qual < min_mapq){
             continue;
         }
 
@@ -159,19 +158,29 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         uint8_t *qual = bam_get_qual(alignment);
 
         vector<int> base_qualities;
+        vector<int> bad_bases;
         string read_seq;
 
         for (int i = 0; i < len; i++) {
             int base_quality = (int) qual[i];
             base_qualities.push_back(base_quality);
-
-            read_seq += seq_nt16_str[bam_seqi(seqi, i)];
+            char base = ::toupper(seq_nt16_str[bam_seqi(seqi, i)]);
+            read_seq += base;
+            if(base_quality < min_baseq or
+               (base != 'A' &&
+                base != 'C' &&
+                base != 'G' &&
+                base != 'T')) {
+                bad_bases.push_back(i);
+            }
         }
+        bad_bases.push_back(read_seq.length() + 1);
 
         // get the cigar operations of the alignment
         uint32_t *cigar = bam_get_cigar(alignment);
         string str_cigar;
         vector <type_cigar> cigar_tuples;
+        long long pos_end = pos;
 
         for(int k = 0; k < alignment->core.n_cigar; k++) {
             int cigar_op = bam_cigar_op(cigar[k]);
@@ -181,6 +190,9 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
 
             cigar_instance.cigar_op = cigar_op;
             cigar_instance.cigar_len = cigar_len;
+
+            if(cigar_op == 0 || cigar_op == 2 || cigar_op == 3 || cigar_op == 7 || cigar_op == 8)
+                pos_end += cigar_len;
 
             cigar_tuples.push_back(cigar_instance);
         }
@@ -192,11 +204,13 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         type_read read;
         read.query_name = query_name;
         read.pos = pos;
+        read.pos_end = pos_end;
         read.sequence = read_seq;
         read.flags = read_flags;
         read.mapping_quality = map_quality;
         read.base_qualities = base_qualities;
         read.cigar_tuples = cigar_tuples;
+        read.bad_indicies = bad_bases;
         reads.push_back(read);
     }
     bam_destroy1(alignment);

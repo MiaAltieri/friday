@@ -8,12 +8,24 @@
 #include "dataio/fasta_handler.h"
 #include "dataio/bam_handler.h"
 #include "local_reassembly/active_region_finder.h"
+#include "local_reassembly/debruijn_graph.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
+        // data structure for sequence name and their length
+        py::class_<DeBruijnGraph>(m, "DeBruijnGraph")
+            .def(py::init<const long long &, const long long &>())
+            .def_readwrite("current_hash_value", &DeBruijnGraph::current_hash_value)
+            .def_readwrite("node_hash_int_to_str", &DeBruijnGraph::node_hash_int_to_str)
+            .def_readwrite("good_nodes", &DeBruijnGraph::good_nodes)
+            .def_readwrite("out_nodes", &DeBruijnGraph::out_nodes)
+            .def_readwrite("edges", &DeBruijnGraph::edges)
+
+            .def("generate_haplotypes", &DeBruijnGraph::generate_haplotypes)
+            .def("find_min_k_from_ref", &DeBruijnGraph::find_min_k_from_ref);
 
         // data structure for sequence name and their length
         py::class_<ActiveRegionFinder>(m, "ActiveRegionFinder")
@@ -49,12 +61,14 @@ PYBIND11_MODULE(FRIDAY, m) {
         // data structure for read
         py::class_<type_read>(m, "type_read")
             .def_readwrite("pos", &type_read::pos)
+            .def_readwrite("pos_end", &type_read::pos_end)
             .def_readwrite("query_name", &type_read::query_name)
             .def_readwrite("flags", &type_read::flags)
             .def_readwrite("sequence", &type_read::sequence)
             .def_readwrite("cigar_sequence", &type_read::cigar_tuples)
             .def_readwrite("mapping_quality", &type_read::mapping_quality)
-            .def_readwrite("base_qualities", &type_read::base_qualities);
+            .def_readwrite("base_qualities", &type_read::base_qualities)
+            .def_readwrite("bad_indicies", &type_read::bad_indicies);
 
         // bam handler API
         py::class_<BAM_handler>(m, "BAM_handler")

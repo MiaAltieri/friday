@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include "sam.h"
 
 using namespace std;
@@ -56,10 +57,12 @@ typedef struct type_read_flags{
 
 typedef struct{
     long long pos;
+    long long pos_end;
     string query_name;
     type_read_flags flags;
     string sequence;
     vector <type_cigar> cigar_tuples;
+    vector <int> bad_indicies;
     int mapping_quality;
     vector <int> base_qualities;
 } type_read;
@@ -91,7 +94,7 @@ class BAM_handler {
 
         BAM_handler(string path);
 
-        vector<type_read> get_reads(string region, long long start, long long stop);
+        vector<type_read> get_reads(string region, long long start, long long stop, int min_mapq, int min_baseq);
         vector<string> get_chromosome_sequence_names();
         vector<type_sequence> get_chromosome_sequence_names_with_length();
         set<string> get_sample_names();
