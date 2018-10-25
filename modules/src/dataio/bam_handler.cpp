@@ -179,17 +179,17 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         // get the cigar operations of the alignment
         uint32_t *cigar = bam_get_cigar(alignment);
         string str_cigar;
-        vector <type_cigar> cigar_tuples;
+        vector <CigarOp> cigar_tuples;
         long long pos_end = pos;
 
         for(int k = 0; k < alignment->core.n_cigar; k++) {
             int cigar_op = bam_cigar_op(cigar[k]);
             int cigar_len = bam_cigar_oplen(cigar[k]);
 
-            type_cigar cigar_instance;
+            CigarOp cigar_instance;
 
-            cigar_instance.cigar_op = cigar_op;
-            cigar_instance.cigar_len = cigar_len;
+            cigar_instance.operation = cigar_op;
+            cigar_instance.length = cigar_len;
 
             if(cigar_op == 0 || cigar_op == 2 || cigar_op == 3 || cigar_op == 7 || cigar_op == 8)
                 pos_end += cigar_len;

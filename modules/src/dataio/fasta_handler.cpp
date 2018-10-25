@@ -37,7 +37,7 @@ string FASTA_handler::get_reference_sequence(string region, long long start, lon
     int len = 0;
     string sequence;
 
-    sequence = faidx_fetch_seq(fasta, region.c_str(), start, stop, &len);
+    sequence = faidx_fetch_seq(fasta, region.c_str(), start, stop - 1, &len);
     //-2 if c_name not present, -1 general error
     if(len == -2){
         cerr<<"CHROMOSOME NAME NOT PRESENT IN REFERENCE FASTA FILE: "<<region<<" "<<start<<" "<<stop<<endl;

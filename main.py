@@ -6,4 +6,5 @@ contig = "chr19"
 
 # find active regions
 ar = LocalAssembler(bam_file, fasta_file, contig, 8926678, 8927210)
-ar.perform_local_assembly()
+all_reads = ar.perform_local_assembly()
+print("Realignment done")

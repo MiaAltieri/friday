@@ -2,11 +2,16 @@ from build import FRIDAY
 from modules.python.ActiveRegionFinder import ActiveRegionFinder, ActiveRegionOptions
 from modules.python.DeBruijnHaplotyper import DeBruijnHaplotyper
 
-
 class CandidateFinderOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 15
     MIN_MAP_QUALITY = 15
+
+
+class AlingerOptions(object):
+    # base and map quality
+    ALIGNMENT_SAFE_BASES = 20
+    MIN_MAP_QUALITY = 20
 
 
 class RegionBasedHaplotypes:
@@ -40,31 +45,39 @@ class LocalAssembler:
         self.region_start_position = region_start
         self.region_end_position = region_end
 
-    # def perform_local_alignment(self, region_with_reads):
-    #     if not region_with_reads.reads:
-    #         return []
-    #     ref_start = min(region_with_reads.min_read_start, region_with_reads.region_start) - AlingerOptions.ALIGNMENT_SAFE_BASES
-    #     ref_end = max(region_with_reads.max_read_end, region_with_reads.region_end) + AlingerOptions.ALIGNMENT_SAFE_BASES
-    #
-    #     if ref_end <= region_with_reads.region_end:
-    #         return region_with_reads.reads
-    #     else:
-    #         ref_suffix = self.fasta_handler.get_sequence(chromosome_name=self.chromosome_name,
-    #                                                      start=region_with_reads.region_end,
-    #                                                      stop=ref_end)
-    #
-    #     ref_prefix = self.fasta_handler.get_sequence(chromosome_name=self.chromosome_name,
-    #                                                  start=ref_start,
-    #                                                  stop=region_with_reads.region_start)
-    #     ref = self.fasta_handler.get_sequence(chromosome_name=self.chromosome_name,
-    #                                           start=region_with_reads.region_start,
-    #                                           stop=region_with_reads.region_end)
-    #     ref_seq = ref_prefix + ref + ref_suffix
-    #     haplotypes = [ref_prefix + hap + ref_suffix for hap in region_with_reads.haplotypes]
-    #     aligner = SSWAligner(ref_start, ref_end, ref_seq)
-    #     realigned_reads = aligner.align_reads(haplotypes, region_with_reads.reads)
-    #
-    #     return realigned_reads
+    def perform_local_alignment(self, region_with_reads):
+        if not region_with_reads.reads:
+            return []
+        ref_start = min(region_with_reads.min_read_start, region_with_reads.region_start) - AlingerOptions.ALIGNMENT_SAFE_BASES
+        ref_end = max(region_with_reads.max_read_end, region_with_reads.region_end) + AlingerOptions.ALIGNMENT_SAFE_BASES
+        fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)
+
+        if ref_end <= region_with_reads.region_end:
+            return region_with_reads.reads
+        else:
+            ref_suffix = fasta_handler.get_reference_sequence(self.chromosome_name,
+                                                              region_with_reads.region_end,
+                                                              ref_end)
+
+        ref_prefix = fasta_handler.get_reference_sequence(self.chromosome_name,
+                                                          ref_start,
+                                                          region_with_reads.region_start)
+        ref = fasta_handler.get_reference_sequence(self.chromosome_name,
+                                                   region_with_reads.region_start,
+                                                   region_with_reads.region_end)
+        ref_seq = ref_prefix + ref + ref_suffix
+        haplotypes = [ref_prefix + hap + ref_suffix for hap in region_with_reads.haplotypes]
+
+        # this needs to be converted to C++
+        aligner = FRIDAY.ReadAligner(ref_start, ref_end, ref_seq)
+
+        haplotypes = sorted(set(haplotypes))
+        if not haplotypes or haplotypes == [ref_seq]:
+            return region_with_reads.reads
+
+        realigned_reads = aligner.align_reads(haplotypes, region_with_reads.reads)
+
+        return realigned_reads
 
     def perform_local_assembly(self, perform_alignment=True):
         # get the reads from the bam file
@@ -89,6 +102,7 @@ class LocalAssembler:
 
         assembly_active_regions = []
         possible_regions = []
+
         for active_region in active_regions:
             start_pos, end_pos = active_region
 
@@ -126,8 +140,6 @@ class LocalAssembler:
             assembly_active_regions[max_window_index].assign_read(read)
 
         for active_region in assembly_active_regions:
-            print(active_region.region_start, active_region.region_end)
-            print(len(active_region.reads))
-            # realigned_reads.extend(self.perform_local_alignment(active_region))
-        exit()
+            realigned_reads.extend(self.perform_local_alignment(active_region))
+
         return realigned_reads

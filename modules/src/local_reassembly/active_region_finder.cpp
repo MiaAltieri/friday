@@ -23,17 +23,17 @@ void ActiveRegionFinder::update_weights(type_read &read, vector<float> &weight_v
     int base_quality = 0;
 
     for(auto &cigar: read.cigar_tuples) {
-        switch (cigar.cigar_op) {
+        switch (cigar.operation) {
             case CIGAR_OPERATIONS::EQUAL:
             case CIGAR_OPERATIONS::DIFF:
             case CIGAR_OPERATIONS::MATCH:
                 cigar_index = 0;
                 if(ref_position < region_start) {
-                    cigar_index = min(region_start - ref_position, (long long)cigar.cigar_len);
+                    cigar_index = min(region_start - ref_position, (long long)cigar.length);
                     read_index += cigar_index;
                     ref_position += cigar_index;
                 }
-                for(int i=cigar_index; i < cigar.cigar_len ; i++) {
+                for(int i=cigar_index; i < cigar.length ; i++) {
                     if(ref_position <= region_end &&
                        reference_sequence[ref_position - region_start] == read.sequence[read_index] &&
                        read.base_qualities[ref_position - region_start] >= ActiveRegionFinder_options::min_base_quality)
@@ -49,21 +49,21 @@ void ActiveRegionFinder::update_weights(type_read &read, vector<float> &weight_v
                 break;
 
             case CIGAR_OPERATIONS::IN:
-                w_pos_start = max(region_start, ref_position - cigar.cigar_len + 1);
-                w_pos_end = max(region_start, min(region_end, ref_position + cigar.cigar_len));
+                w_pos_start = max(region_start, ref_position - cigar.length + 1);
+                w_pos_end = max(region_start, min(region_end, ref_position + cigar.length));
                 base_quality = *std::min_element(read.base_qualities.begin() + read_index,
-                                                 read.base_qualities.begin() + (read_index + cigar.cigar_len));
+                                                 read.base_qualities.begin() + (read_index + cigar.length));
                 if(base_quality >= ActiveRegionFinder_options::min_base_quality) {
                     for (int pos = w_pos_start; pos <= w_pos_end; pos++) {
                         weight_vector[pos - region_start] += ActiveRegionFinder_options::w_insert;
                     }
                 }
-                read_index += cigar.cigar_len;
+                read_index += cigar.length;
                 break;
             case CIGAR_OPERATIONS::REF_SKIP:
             case CIGAR_OPERATIONS::DEL:
                 w_pos_start = max(region_start, ref_position + 1);
-                w_pos_end = max(region_start, min(region_end, ref_position + cigar.cigar_len));
+                w_pos_end = max(region_start, min(region_end, ref_position + cigar.length));
 
                 base_quality = read.base_qualities[max(0, read_index - 1)];
                 if(base_quality >= ActiveRegionFinder_options::min_base_quality) {
@@ -71,19 +71,19 @@ void ActiveRegionFinder::update_weights(type_read &read, vector<float> &weight_v
                         weight_vector[pos - region_start] += ActiveRegionFinder_options::w_delete;
                     }
                 }
-                ref_position += cigar.cigar_len;
+                ref_position += cigar.length;
                 break;
             case CIGAR_OPERATIONS::SOFT_CLIP:
-                w_pos_start = max(region_start, ref_position - cigar.cigar_len + 1);
-                w_pos_end = max(region_start, min(region_end, ref_position + cigar.cigar_len));
+                w_pos_start = max(region_start, ref_position - cigar.length + 1);
+                w_pos_end = max(region_start, min(region_end, ref_position + cigar.length));
                 base_quality = *std::min_element(read.base_qualities.begin() + read_index,
-                                                 read.base_qualities.begin() + (read_index + cigar.cigar_len));
+                                                 read.base_qualities.begin() + (read_index + cigar.length));
                 if(base_quality >= ActiveRegionFinder_options::min_base_quality) {
                     for (int pos = w_pos_start; pos <= w_pos_end; pos++) {
                         weight_vector[pos - region_start] += ActiveRegionFinder_options::w_soft_clip;
                     }
                 }
-                read_index += cigar.cigar_len;
+                read_index += cigar.length;
                 break;
             case CIGAR_OPERATIONS::HARD_CLIP:
                 break;

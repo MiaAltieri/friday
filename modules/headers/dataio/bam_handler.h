@@ -21,12 +21,35 @@ using namespace std;
 #define INSERT_TYPE 2
 #define DELETE_TYPE 3
 
-typedef struct{
-    int cigar_op;
-    int cigar_len;
-} type_cigar;
+//typedef struct type_read type_read;
+//typedef struct LinearAlignment LinearAlignment;
 
-typedef struct type_read_flags{
+struct CigarOp {
+    CigarOp() : operation(-1), length(0) {}
+    CigarOp(int op, int len) : operation(op), length(len) {}
+
+    bool operator==(const CigarOp& that) const {
+        return operation == that.operation && length == that.length;
+    }
+
+    void operator=(const CigarOp& that) {
+        this->operation = that.operation;
+        this->length = that.length;
+    }
+
+    void set_operation(int op) {
+        operation = op;
+    }
+
+    void set_length(int len) {
+        length = len;
+    }
+
+    int operation;
+    int length;
+};
+
+struct type_read_flags{
     bool is_paired;
     bool is_proper_pair;
     bool is_unmapped;
@@ -53,19 +76,54 @@ typedef struct type_read_flags{
         is_duplicate= 0;
         is_supplementary= 0;
     }
-} type_read_flags;
+    void operator=(const type_read_flags& that) {
+        this->is_paired = that.is_paired;
+        this->is_proper_pair = that.is_proper_pair;
+        this->is_unmapped = that.is_unmapped;
+        this->is_mate_unmapped = that.is_mate_unmapped;
+        this->is_reverse = that.is_reverse;
+        this->is_mate_is_reverse = that.is_mate_is_reverse;
+        this->is_read1 = that.is_read1;
+        this->is_read2 = that.is_read2;
+        this->is_secondary = that.is_secondary;
+        this->is_qc_failed = that.is_qc_failed;
+        this->is_duplicate = that.is_duplicate;
+        this->is_supplementary = that.is_supplementary;
 
-typedef struct{
+    }
+};
+
+struct type_read{
     long long pos;
     long long pos_end;
     string query_name;
     type_read_flags flags;
     string sequence;
-    vector <type_cigar> cigar_tuples;
+    vector <CigarOp> cigar_tuples;
     vector <int> bad_indicies;
     int mapping_quality;
     vector <int> base_qualities;
-} type_read;
+
+    void set_position(long long pos){
+        this->pos = pos;
+    }
+
+    void set_cigar_tuples(vector <CigarOp> cigar_tuples) {
+        this->cigar_tuples = cigar_tuples;
+    }
+
+    void operator=(const type_read& that) {
+        this->pos = that.pos;
+        this->pos_end = that.pos_end;
+        this->query_name = that.query_name;
+        this->flags = that.flags;
+        this->sequence = that.sequence;
+        this->cigar_tuples = that.cigar_tuples;
+        this->bad_indicies = that.bad_indicies;
+        this->mapping_quality = that.mapping_quality;
+        this->base_qualities = that.base_qualities;
+    }
+};
 
 typedef struct{
     string sequence_name;
@@ -85,6 +143,7 @@ public:
     static constexpr int EQUAL = 7;
     static constexpr int DIFF = 8;
     static constexpr int BACK = 9;
+    static constexpr int UNSPECIFIED = -1;
 };
 
 class BAM_handler {
