@@ -2,6 +2,7 @@ from build import FRIDAY
 from modules.python.ActiveRegionFinder import ActiveRegionFinder, ActiveRegionOptions
 from modules.python.DeBruijnHaplotyper import DeBruijnHaplotyper
 
+
 class CandidateFinderOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 15
@@ -68,10 +69,10 @@ class LocalAssembler:
         ref_seq = ref_prefix + ref + ref_suffix
         haplotypes = [ref_prefix + hap + ref_suffix for hap in region_with_reads.haplotypes]
 
-        # this needs to be converted to C++
         aligner = FRIDAY.ReadAligner(ref_start, ref_end, ref_seq)
 
         haplotypes = sorted(set(haplotypes))
+
         if not haplotypes or haplotypes == [ref_seq]:
             return region_with_reads.reads
 

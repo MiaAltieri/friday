@@ -7,4 +7,5 @@
 #include "local_reassembly/active_region_finder.cpp"
 #include "local_reassembly/debruijn_graph.cpp"
 #include "local_reassembly/aligner.cpp"
+#include "candidate_finding/candidate_finder.cpp"
 #include "../headers/pybind_api.h"

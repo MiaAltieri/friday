@@ -10,12 +10,30 @@
 #include "local_reassembly/active_region_finder.h"
 #include "local_reassembly/debruijn_graph.h"
 #include "local_reassembly/aligner.h"
+#include "candidate_finding/candidate_finder.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
+
+        py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
+            .def(py::init<>())
+            .def_readwrite("chromosome_name", &PositionalCandidateRecord::chromosome_name)
+            .def_readwrite("pos", &PositionalCandidateRecord::pos)
+            .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
+            .def_readwrite("ref", &PositionalCandidateRecord::ref)
+            .def_readwrite("alt1", &PositionalCandidateRecord::alt1)
+            .def_readwrite("alt2", &PositionalCandidateRecord::alt2)
+            .def_readwrite("alt1_type", &PositionalCandidateRecord::alt1_type)
+            .def_readwrite("alt2_type", &PositionalCandidateRecord::alt2_type);
+
+        // Candidate finder
+        py::class_<CandidateFinder>(m, "CandidateFinder")
+            .def(py::init<const string &, const string &, long long &, long long&>())
+            .def("find_candidates", &CandidateFinder::find_candidates);
+
         // Alignment CLASS
         py::class_<StripedSmithWaterman::Alignment>(m, "Alignment")
             .def(py::init<>())
