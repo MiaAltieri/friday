@@ -1,5 +1,7 @@
 # build htslib
 set(htslib_PREFIX ${CMAKE_BINARY_DIR}/htslib)
+set (CMAKE_CXX_FLAGS "-fPIC")
+set (CMAKE_C_FLAGS "-fPIC")
 # Enable ExternalProject CMake module
 include(ExternalProject)
 
