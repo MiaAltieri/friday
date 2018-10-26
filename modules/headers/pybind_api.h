@@ -7,6 +7,7 @@
 
 #include "dataio/fasta_handler.h"
 #include "dataio/bam_handler.h"
+#include "dataio/vcf_handler.h"
 #include "local_reassembly/active_region_finder.h"
 #include "local_reassembly/debruijn_graph.h"
 #include "local_reassembly/aligner.h"
@@ -20,6 +21,8 @@ PYBIND11_MODULE(FRIDAY, m) {
 
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
+            .def("print", &PositionalCandidateRecord::print)
+            .def("set_genotype", &PositionalCandidateRecord::set_genotype)
             .def_readwrite("chromosome_name", &PositionalCandidateRecord::chromosome_name)
             .def_readwrite("pos", &PositionalCandidateRecord::pos)
             .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
@@ -27,11 +30,16 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("alt1", &PositionalCandidateRecord::alt1)
             .def_readwrite("alt2", &PositionalCandidateRecord::alt2)
             .def_readwrite("alt1_type", &PositionalCandidateRecord::alt1_type)
-            .def_readwrite("alt2_type", &PositionalCandidateRecord::alt2_type);
+            .def_readwrite("alt2_type", &PositionalCandidateRecord::alt2_type)
+            .def_readwrite("labeled", &PositionalCandidateRecord::labeled)
+            .def_readwrite("alt1_gt", &PositionalCandidateRecord::alt1_gt)
+            .def_readwrite("alt2_gt", &PositionalCandidateRecord::alt2_gt)
+            .def_readwrite("genotype", &PositionalCandidateRecord::genotype)
+            .def("get_candidate_record", &PositionalCandidateRecord::get_candidate_record);
 
         // Candidate finder
         py::class_<CandidateFinder>(m, "CandidateFinder")
-            .def(py::init<const string &, const string &, long long &, long long&>())
+            .def(py::init<const string &, const string &, long long &, long long&, long long&, long long&>())
             .def("find_candidates", &CandidateFinder::find_candidates);
 
         // Alignment CLASS
@@ -138,5 +146,24 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def("get_reference_sequence", &FASTA_handler::get_reference_sequence)
             .def("get_chromosome_sequence_length", &FASTA_handler::get_chromosome_sequence_length)
             .def("get_chromosome_names", &FASTA_handler::get_chromosome_names);
+
+        // VCF handler API
+        py::class_<VCF_handler>(m, "VCF_handler")
+            .def(py::init<const string &>())
+            .def("get_vcf_records", &VCF_handler::get_vcf_records);
+
+        // VCF handler API
+        py::class_<type_vcf_record>(m, "type_vcf_record")
+            .def_readwrite("chromosome_name", &type_vcf_record::chromosome_name)
+            .def_readwrite("start_pos", &type_vcf_record::start_pos)
+            .def_readwrite("end_pos", &type_vcf_record::end_pos)
+            .def_readwrite("id", &type_vcf_record::id)
+            .def_readwrite("qual", &type_vcf_record::qual)
+            .def_readwrite("is_filter_pass", &type_vcf_record::is_filter_pass)
+            .def_readwrite("sample_name", &type_vcf_record::sample_name)
+            .def_readwrite("genotype", &type_vcf_record::genotype)
+            .def_readwrite("filters", &type_vcf_record::filters)
+            .def_readwrite("alleles", &type_vcf_record::alleles);
+
 }
 #endif //FRIDAY_PYBIND_API_H

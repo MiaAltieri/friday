@@ -29,8 +29,8 @@ typedef struct{
 
 typedef struct{
     string chromosome_name;
-    uint64_t start_pos;
-    uint64_t end_pos;
+    long long start_pos;
+    long long end_pos;
     string id;
     double qual;
     bool is_phased;
@@ -38,19 +38,23 @@ typedef struct{
     string sample_name;
     vector<int> genotype;
     vector<string> filters;
-    vector<type_alt_allele> alt_allele;
+    vector<string> alleles;
+//    vector<type_alt_allele> alt_allele;
 } type_vcf_record;
 
-class vcf_handler {
+class VCF_handler {
     public:
-        vcf_handler(string file_path);
-        map<long long, vector<type_vcf_record> > get_positional_vcf_records(string chromosome_name,
-                                                                   long long start,
-                                                                   long long stop) ;
+        VCF_handler(string file_path);
+//        map<long long, vector<type_vcf_record> > get_positional_vcf_records(string chromosome_name,
+//                                                                   long long start,
+//                                                                   long long stop) ;
+        vector<type_vcf_record> get_vcf_records(string chromosome_name,
+                                                long long start,
+                                                long long stop) ;
         int process_insert_allele(string ref, string alt, type_alt_allele &alt_allele);
         int process_delete_allele(string ref, string alt, type_alt_allele &alt_allele);
         int process_snp_allele(string ref, string alt, type_alt_allele &alt_allele);
-        ~vcf_handler();
+        ~VCF_handler();
     private:
         htsFile * vcf_file;
         bcf_hdr_t * vcf_header;
