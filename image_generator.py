@@ -102,8 +102,8 @@ class View:
         :param thread_no: Thread no for this region
         :return:
         """
-        st_time = time.time()
-        print("STARTING", start_position, end_position)
+        # st_time = time.time()
+        # print("STARTING", start_position, end_position)
         local_assembler = LocalAssembler(self.bam_path,
                                          self.fasta_path,
                                          self.chromosome_name,
@@ -130,8 +130,8 @@ class View:
                                                           thread_no,
                                                           self.output_dir)
 
-        end_time = time.time()
-        print("TIME ELAPSED: ", start_position, end_position, end_time - st_time)
+        # end_time = time.time()
+        # print("TIME ELAPSED: ", start_position, end_position, end_time - st_time)
 
 
 def parallel_run(chr_name, bam_file, ref_file, vcf_file, output_dir, start_pos, end_pos, conf_bed_tree, thread_no):
