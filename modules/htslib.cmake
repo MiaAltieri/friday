@@ -1,7 +1,6 @@
 # build htslib
 set(htslib_PREFIX ${CMAKE_BINARY_DIR}/htslib)
-set (CMAKE_CXX_FLAGS "-fPIC")
-set (CMAKE_C_FLAGS "-fPIC")
+set (FLAGS "-fPIC")
 # Enable ExternalProject CMake module
 include(ExternalProject)
 
@@ -11,7 +10,7 @@ ExternalProject_Add(htslib
         PREFIX ${htslib_PREFIX}
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND autoconf && ./configure --prefix=${CMAKE_BINARY_DIR}/htslib
-        BUILD_COMMAND make
+        BUILD_COMMAND make CFLAGS=${CMAKE_C_FLAGS}
         INSTALL_COMMAND "")
 ExternalProject_Get_Property(htslib SOURCE_DIR)
 set(HTSLIB_SRC_DIR ${SOURCE_DIR})
