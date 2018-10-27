@@ -4,6 +4,6 @@
 mkdir build
 cd build
 
-cmake .. -DPYTHON_LIBRARY=/Applications/Anaconda/anaconda/bin/python3 && make
+cmake .. && make
 cd ..
 # python3 main.py
