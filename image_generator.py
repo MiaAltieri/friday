@@ -102,8 +102,8 @@ class View:
         :param thread_no: Thread no for this region
         :return:
         """
-        # st_time = time.time()
-        # print("STARTING", start_position, end_position)
+        st_time = time.time()
+        print("STARTING", thread_no, start_position, end_position)
         local_assembler = LocalAssembler(self.bam_path,
                                          self.fasta_path,
                                          self.chromosome_name,
@@ -118,20 +118,20 @@ class View:
         candidates = candidate_finder.find_candidates(reads)
 
         # get all labeled candidate sites
-        labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+        # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
 
         # if DEBUG_PRINT_CANDIDATES:
         #     for candidate in labeled_sites:
         #         print(candidate)
 
         # generate and save candidate images
-        ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
-                                                          labeled_sites,
-                                                          thread_no,
-                                                          self.output_dir)
+        # ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
+        #                                                   labeled_sites,
+        #                                                   thread_no,
+        #                                                   self.output_dir)
 
-        # end_time = time.time()
-        # print("TIME ELAPSED: ", start_position, end_position, end_time - st_time)
+        end_time = time.time()
+        print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
 
 
 def parallel_run(chr_name, bam_file, ref_file, vcf_file, output_dir, start_pos, end_pos, conf_bed_tree, thread_no):
@@ -341,7 +341,7 @@ def test(view_object):
     """
     start_time = time.time()
     # view_object.parse_region(start_position=8926678, end_position=8927210, thread_no=1)
-    view_object.parse_region(start_position=8926678, end_position=8927210, thread_no=1)
+    view_object.parse_region(start_position=274785 , end_position=275785, thread_no=1)
     print("TOTAL TIME ELAPSED: ", time.time()-start_time)
 
 
