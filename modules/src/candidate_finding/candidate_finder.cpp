@@ -124,7 +124,8 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                         AlleleMap[region_index].insert(candidate_alt);
                 }
 
-                if(base_quality >= CandidateFinder_options::min_base_quality) {
+                if(ref_position >= region_start && ref_position <= region_end &&
+                   base_quality >= CandidateFinder_options::min_base_quality) {
                     for (long long pos = ref_position; pos <= min(region_end, ref_position + cigar.length); pos++)
                         coverage[pos - region_start] += 1;
                 }

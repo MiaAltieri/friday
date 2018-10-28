@@ -111,11 +111,11 @@ class View:
                                          end_position)
         reads = local_assembler.perform_local_assembly()
 
-        # candidate_finder = CandidateFinder(self.fasta_path,
-        #                                    self.chromosome_name,
-        #                                    start_position,
-        #                                    end_position)
-        # candidates = candidate_finder.find_candidates(reads)
+        candidate_finder = CandidateFinder(self.fasta_path,
+                                           self.chromosome_name,
+                                           start_position,
+                                           end_position)
+        candidates = candidate_finder.find_candidates(reads)
 
         # get all labeled candidate sites
         # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
@@ -354,7 +354,7 @@ def test(view_object):
     """
     start_time = time.time()
     # view_object.parse_region(start_position=8926678, end_position=8927210, thread_no=1)
-    view_object.parse_region(start_position=274785, end_position=275785, thread_no=1)
+    view_object.parse_region(start_position=265759, end_position=266859, thread_no=1)
     print("TOTAL TIME ELAPSED: ", time.time()-start_time)
 
 

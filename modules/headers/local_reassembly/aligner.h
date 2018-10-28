@@ -69,7 +69,7 @@ struct ReadAlignment {
         cigar = "";
     }
 
-    uint16_t position;
+    long long position;
     string cigar;
     int score;
 };
@@ -112,7 +112,7 @@ struct HaplotypeReadsAlignment {
     std::list<CigarOp> cigar_ops;
 
     // Hypolotype to reference position.
-    uint64_t ref_pos;
+    long long ref_pos;
 
     // Map of shifts that allow to easily calculate read to reference position
     // from read to haplotype position. read pos = read_to_haplotype_pos
@@ -129,14 +129,14 @@ struct HaplotypeReadsAlignment {
 
 struct KmerMap {
     KmerMap() {}
-    KmerMap(int read_id, int pos) : read_id(read_id), read_pos(pos) {}
+    KmerMap(long long  read_id, long long pos) : read_id(read_id), read_pos(pos) {}
 
     bool operator==(const KmerMap& b) const {
         return read_id == b.read_id && read_pos == b.read_pos;
     }
 
-    int read_id;
-    int read_pos;
+    long long read_id;
+    long long read_pos;
 };
 
 class LibSSWPairwiseAligner {

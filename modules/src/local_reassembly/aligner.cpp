@@ -34,7 +34,7 @@ ReadAligner::ReadAligner(int ref_start, int ref_end, string ref_seq) {
 }
 
 void ReadAligner::CreateKmerMap() {
-    int read_hash_id = 1;
+    int read_hash_id = 0;
     for (const auto& read : read_sequences) {
         if (read.length() <= kmer_size) {
             continue;
@@ -84,6 +84,7 @@ void ReadAligner::AlignReadsToHaplotype( const string& haplotype,
         // kmer.
         for (const auto& it : index_it->second) {
             uint64_t read_id_index = static_cast<uint64_t>(it.read_id);
+            if(read_id_index >= read_sequences.size()) continue;
 
             size_t target_start_pos = std::max(
                     static_cast<int64_t>(0),
@@ -516,8 +517,8 @@ void ReadAligner::CalculateReadToRefAlignment(size_t read_index, const ReadAlign
             // In all other cases read realignment is discarded.
             // redacted
         } else {
-            cerr << "read " << static_cast<int>(read_index)
-                 << ", could not be aligned, alignedLength=" << AlignedLength(*read_to_ref_cigar_ops);
+//            cerr << "read " << static_cast<int>(read_index)
+//                 << ", could not be aligned, alignedLength=" << AlignedLength(*read_to_ref_cigar_ops);
             read_to_ref_cigar_ops->clear();
             return;
         }
