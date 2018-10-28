@@ -11,8 +11,9 @@ using namespace std;
 
 namespace CandidateFinder_options {
     static constexpr int min_mapping_quality = 14;
-    static constexpr int min_base_quality = 0;
+    static constexpr int min_base_quality = 15;
     static constexpr int freq_threshold = 12;
+    static constexpr int min_count_threshold = 1;
 };
 
 namespace AlleleType {

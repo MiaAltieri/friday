@@ -2,7 +2,7 @@ from build import FRIDAY
 
 
 class CandidateFinderOptions(object):
-    MIN_MAPPING_QUALITY = 15
+    MIN_MAPPING_QUALITY = 14
     MIN_BASE_QUALITY = 15
     SAFE_BASES = 50
     # the linear regression model is used inside C++ code

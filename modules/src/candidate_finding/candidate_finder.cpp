@@ -187,7 +187,8 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(vector<type_r
             if(coverage[i] > 0)
                 freq = (int)ceil(100.0 *  ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]));
 
-            if(freq < CandidateFinder_options::freq_threshold)
+            if(AlleleFrequencyMap[candidate] <= CandidateFinder_options::min_count_threshold ||
+               freq < CandidateFinder_options::freq_threshold)
                 continue;
 
             positional_candidates.push_back(make_pair(freq, candidate));
