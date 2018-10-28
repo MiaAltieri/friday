@@ -118,17 +118,17 @@ class View:
         candidates = candidate_finder.find_candidates(reads)
 
         # get all labeled candidate sites
-        # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+        labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
 
         # if DEBUG_PRINT_CANDIDATES:
         #     for candidate in labeled_sites:
         #         print(candidate)
 
         # generate and save candidate images
-        # ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
-        #                                                   labeled_sites,
-        #                                                   thread_no,
-        #                                                   self.output_dir)
+        ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
+                                                          labeled_sites,
+                                                          thread_no,
+                                                          self.output_dir)
 
         # end_time = time.time()
         # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
