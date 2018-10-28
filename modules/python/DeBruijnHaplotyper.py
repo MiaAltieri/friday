@@ -57,7 +57,7 @@ class DeBruijnHaplotyper:
                                                                 DeBruijnGraphOptions.STEP_K)
         # couldn't build ref without cycle
         if min_k == -1:
-            return None
+            return None, None
 
         # get the reads from the bam file
         bam_handler = FRIDAY.BAM_handler(self.bam_file_path)
