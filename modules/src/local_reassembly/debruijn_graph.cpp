@@ -85,14 +85,14 @@ bool DeBruijnGraph::check_if_base_ok(char base){
 
 
 void DeBruijnGraph::add_read_to_graph(type_read &read, int kmer_size) {
-    long long read_start_index = max((long long) 0, (region_start - read.pos));
+    long long read_start_index = max((long long) 0, (region_start - read.pos - 1));
 
     int current_position = read_start_index;
     int current_bad_vector_index = 0;
 
     while(current_position < read.sequence.length() - kmer_size) {
         int next_bad_position = read.bad_indicies[current_bad_vector_index] - 1;
-        if(next_bad_position - current_position > kmer_size) {
+        if(next_bad_position - current_position >= kmer_size) {
             int previous_node = get_hash(read.sequence.substr(current_position, kmer_size));
             for(int i=current_position + 1; i < next_bad_position - kmer_size + 1; i++) {
                 int current_node = get_hash(read.sequence.substr(i, kmer_size));
@@ -120,22 +120,31 @@ void DeBruijnGraph::add_reference_path(string reference_sequence, int kmer_size)
 }
 
 bool DeBruijnGraph::detect_cycle(int v) {
-    if(v==_sink_node){
-        return false;
-    }
-    if(!visit_color[v]) {
-        visit_color[v] = true;
-        stack_color[v] = true;
+    int WHITE = 0;
+    int GRAY = 1;
+    int BLACK = 2;
 
+    int ENTER = 0;
+    int EXIT = 1;
 
-        for(auto next_v: out_nodes[v]) {
-            if ( !visit_color[next_v] && detect_cycle(next_v) )
-                return true;
-            else if (stack_color[next_v])
-                return true;
+    vector<int> state(current_hash_value + 1, WHITE);
+    stack< pair<int, int> > _stack;
+    _stack.push(make_pair(ENTER, _source_node));
+
+    while(!_stack.empty()) {
+        pair<int, int> current_node = _stack.top();
+        _stack.pop();
+        if(current_node.first == EXIT)
+            state[current_node.second] = BLACK;
+        else {
+            state[current_node.second] = GRAY;
+            _stack.push(make_pair(EXIT, current_node.second));
+            for(auto next_v: out_nodes[current_node.second]) {
+                if(state[next_v] == GRAY) return true;
+                else if (state[next_v] == WHITE) _stack.push(make_pair(ENTER, next_v));
+            }
         }
     }
-    stack_color[v] = false;  // remove the vertex from recursion stack
     return false;
 }
 

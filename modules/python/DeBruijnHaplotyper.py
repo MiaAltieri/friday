@@ -10,7 +10,7 @@ class DeBruijnGraphOptions(object):
     MAX_ALLOWED_PATHS = 256
 
     # base and map quality
-    MIN_BASE_QUALITY = 20
+    MIN_BASE_QUALITY = 15
     MIN_MAP_QUALITY = 20
 
 
@@ -34,6 +34,8 @@ class DeBruijnHaplotyper:
         for i in range(1, graph.current_hash_value):
             if on_pruned_nodes is True and i not in graph.good_nodes:
                 continue
+            if i not in graph.out_nodes:
+                continue
             for j in range(len(graph.out_nodes[i])):
                 node_a = i
                 node_b = graph.out_nodes[i][j]
@@ -50,7 +52,6 @@ class DeBruijnHaplotyper:
         # get the reference from the fasta file
         fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)
         reference_sequence = fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
-
         min_k, max_k = FRIDAY.DeBruijnGraph.find_min_k_from_ref(reference_sequence,
                                                                 DeBruijnGraphOptions.MIN_K,
                                                                 DeBruijnGraphOptions.MAX_K,
@@ -68,11 +69,15 @@ class DeBruijnHaplotyper:
                                       DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
         # print(reference_sequence)
+        # min_k = 44
         for kmer_size in range(min_k, max_k+1, DeBruijnGraphOptions.STEP_K):
             dbg_graph = FRIDAY.DeBruijnGraph(self.region_start, self.region_end)
             haplotypes = dbg_graph.generate_haplotypes(reference_sequence, reads, kmer_size)
-            # self.visualize(dbg_graph, 'cpp_dbg', True)
+            # self.visualize(dbg_graph, 'unpruned', False)
+            # break
             if haplotypes:
+                # print(kmer_size)
+                # self.visualize(dbg_graph, 'pruned', True)
                 return reference_sequence, haplotypes
 
         return reference_sequence, []

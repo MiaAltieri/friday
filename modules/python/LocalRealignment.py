@@ -118,6 +118,9 @@ class LocalAssembler:
 
             reference_sequence, haplotypes = db_graph.find_haplotypes()
 
+            # print(active_region)
+            # for hap in set(haplotypes):
+            #     print(hap)
             if haplotypes:
                 assembly_active_regions.append(RegionBasedHaplotypes(haplotypes, start_pos, end_pos))
                 possible_regions.append((start_pos, end_pos))
