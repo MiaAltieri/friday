@@ -104,36 +104,31 @@ class View:
         """
         # st_time = time.time()
         # print("STARTING", thread_no, start_position, end_position)
-        serial_count = 1
-        while start_position < end_position:
-            end_pos = min(end_position, start_position + 1000)
-            local_assembler = LocalAssembler(self.bam_path,
-                                             self.fasta_path,
-                                             self.chromosome_name,
-                                             start_position,
-                                             end_pos)
-            reads = local_assembler.perform_local_assembly()
+        local_assembler = LocalAssembler(self.bam_path,
+                                         self.fasta_path,
+                                         self.chromosome_name,
+                                         start_position,
+                                         end_position)
+        reads = local_assembler.perform_local_assembly()
 
-            candidate_finder = CandidateFinder(self.fasta_path,
-                                               self.chromosome_name,
-                                               start_position,
-                                               end_pos)
-            candidates = candidate_finder.find_candidates(reads)
+        candidate_finder = CandidateFinder(self.fasta_path,
+                                           self.chromosome_name,
+                                           start_position,
+                                           end_position)
+        candidates = candidate_finder.find_candidates(reads)
 
-            # get all labeled candidate sites
-            labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_pos, True)
+        # get all labeled candidate sites
+        labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
 
-            # if DEBUG_PRINT_CANDIDATES:
-            #     for candidate in labeled_sites:
-            #         print(candidate)
+        # if DEBUG_PRINT_CANDIDATES:
+        #     for candidate in labeled_sites:
+        #         print(candidate)
 
-            # generate and save candidate images
-            ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
-                                                              labeled_sites,
-                                                              str(thread_no) + '_' + str(serial_count),
-                                                              self.output_dir)
-            start_position = end_pos + 1
-            serial_count += 1
+        # generate and save candidate images
+        ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
+                                                          labeled_sites,
+                                                          str(thread_no),
+                                                          self.output_dir)
 
         # end_time = time.time()
         # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
@@ -220,46 +215,32 @@ def chromosome_level_parallelization(chr_name, bam_file, ref_file, vcf_file, out
         #     end_position = min((i + 1) * each_segment_length, whole_length)
         #     intervals.append([start_position, end_position])
     else:
-        # each_segment_length = 1000
-        # prev_interval = None
-        # for interval in confident_bed_tree[chr_name]:
-        #     start_position, end_position = interval
-        #
-        #     if prev_interval is not None:
-        #         prev_start, prev_end = prev_interval
-        #         can_be_added = min(50, max(0, start_position - prev_end - 1))
-        #         start_position = start_position - can_be_added
-        #
-        #     if start_position == end_position:
-        #         end_position += 1
-        #
-        #     start_position = start_position - BED_POSITION_BUFFER
-        #     end_position = end_position + BED_POSITION_BUFFER
-        #
-        #     if end_position - start_position + 1 < each_segment_length:
-        #         intervals.append([start_position, end_position])
-        #     else:
-        #         st_ = start_position
-        #         while st_ < end_position:
-        #             end_ = min(st_ + each_segment_length, end_position)
-        #             intervals.append([st_, end_])
-        #             st_ = end_ + 1
-        #
-        #     prev_interval = interval
-        last_start, last_end = -1, -1
+        each_segment_length = 1000
+        prev_interval = None
         for interval in confident_bed_tree[chr_name]:
-
             start_position, end_position = interval
+
+            if prev_interval is not None:
+                prev_start, prev_end = prev_interval
+                can_be_added = min(50, max(0, start_position - prev_end - 1))
+                start_position = start_position - can_be_added
+
+            if start_position == end_position:
+                end_position += 1
+
             start_position = start_position - BED_POSITION_BUFFER
             end_position = end_position + BED_POSITION_BUFFER
 
-            if last_start == -1:
-                expandable = 0
+            if end_position - start_position + 1 < each_segment_length:
+                intervals.append([start_position, end_position])
             else:
-                expandable = min(50, start_position - last_end -1)
+                st_ = start_position
+                while st_ < end_position:
+                    end_ = min(st_ + each_segment_length, end_position)
+                    intervals.append([st_, end_])
+                    st_ = end_ + 1
 
-            intervals.append([start_position - expandable, end_position])
-            last_start, last_end = interval
+            prev_interval = interval
 
     for i in tqdm(range(len(intervals)), ncols=100):
         start_position = intervals[i][0]
