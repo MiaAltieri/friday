@@ -107,7 +107,6 @@ class View:
         serial_count = 1
         while start_position < end_position:
             end_pos = min(end_position, start_position + 1000)
-            print(thread_no, start_position, end_pos)
             local_assembler = LocalAssembler(self.bam_path,
                                              self.fasta_path,
                                              self.chromosome_name,
