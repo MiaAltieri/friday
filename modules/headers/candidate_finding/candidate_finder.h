@@ -146,6 +146,7 @@ struct PositionalCandidateRecord{
         string rec_com = this->chromosome_name + "\t" + to_string(this->pos) + "\t" + to_string(this->pos_end);
         rec_com = rec_com + "\t" + this->ref + "\t" + this->alt1 + "\t" + this->alt2 ;
         rec_com = rec_com + "\t" + to_string(this->alt1_type) + "\t" + to_string(this->alt2_type) + "\t" + to_string(rec_genotype);
+        records.push_back(rec_com);
 
         return records;
     }

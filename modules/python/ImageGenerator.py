@@ -103,7 +103,9 @@ class ImageGenerator:
         image_record_set = []
         # expand the records for sites where two alleles are found
         for candidate in candidate_list:
+            # print('Candidate: ', end='')
             # candidate.print()
+            # print('Records: ', end='')
             # for rec in candidate.get_candidate_record():
             #     print(rec)
             image_record_set.extend(candidate.get_candidate_record())
