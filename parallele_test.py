@@ -43,7 +43,7 @@ class View:
     """
     Process manager that runs sequence of processes to generate images and their labebls.
     """
-    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, output_file_path):
+    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, summary_writer):
         """
         Initialize a manager object
         :param chromosome_name: Name of the chromosome
@@ -58,7 +58,7 @@ class View:
         self.bam_path = bam_file_path
         self.fasta_path = reference_file_path
         self.vcf_path = vcf_path
-        self.output_dir = output_file_path
+        self.summary_writer = summary_writer
         self.bam_handler = FRIDAY.BAM_handler(bam_file_path)
         self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
 
@@ -97,7 +97,7 @@ class View:
 
         return labeled_candidates
 
-    def parse_region(self, start_position, end_position, thread_no, summary_writer):
+    def parse_region(self, start_position, end_position):
         """
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
@@ -130,7 +130,7 @@ class View:
         # #         print(candidate)
         #
         # # generate and save candidate images
-        ImageGenerator.generate_and_save_candidate_images(candidates, summary_writer)
+        img_set = ImageGenerator.generate_and_save_candidate_images(candidates, self.summary_writer)
         return len(reads), len(candidates)
         #
         # # end_time = time.time()
@@ -178,30 +178,29 @@ def chromosome_level_parallelization(chr_name,
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
     interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
-    # interval_start, interval_end = (265759, 266859)
+    # interval_start, interval_end = (265759, 269859)
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
         all_intervals.append((pos, pos + max_size))
 
     intervals = [r for i, r in enumerate(all_intervals) if i % total_threads == thread_id]
 
+    smry = None
+    if intervals:
+        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+
     view = View(chromosome_name=chr_name,
                 bam_file_path=bam_file,
                 reference_file_path=ref_file,
                 vcf_path=vcf_file,
-                output_file_path=output_path)
-
-    smry = None
-    if intervals:
-        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+                summary_writer=smry)
 
     start_time = time.time()
     total_reads_processed = 0
     total_candidates = 0
     for interval in intervals:
         _start, _end = interval
-        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id,
-                                                  summary_writer=smry)
+        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end)
         total_reads_processed += n_reads
         total_candidates += n_candidates
 
@@ -327,14 +326,13 @@ if __name__ == '__main__':
     #     sys.stderr.write(TextColor.PURPLE + "CONFIDENT TREE LOADED\n" + TextColor.END)
     # else:
     #     sys.stderr.write(TextColor.RED + "CONFIDENT BED IS NULL\n" + TextColor.END)
-    output_dir = handle_output_directory(FLAGS.output_dir)
     confident_intervals = None
     chromosome_level_parallelization(FLAGS.chromosome_name,
                                      FLAGS.bam,
                                      FLAGS.fasta,
                                      FLAGS.vcf,
                                      confident_intervals,
-                                     output_dir,
+                                     FLAGS.output_dir,
                                      FLAGS.threads,
                                      FLAGS.thread_id)
 

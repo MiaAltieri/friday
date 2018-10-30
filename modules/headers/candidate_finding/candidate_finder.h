@@ -41,7 +41,7 @@ struct PositionalCandidateRecord{
     bool labeled;
     int alt1_gt;
     int alt2_gt;
-    vector<int> genotype;
+    vector<int> genotype {0, 0};
 
     PositionalCandidateRecord() {
         this->alt1_type = 0;
@@ -124,7 +124,7 @@ struct PositionalCandidateRecord{
         rec_alt1 = rec_alt1 + "\t" + to_string(this->alt1_type) + "\t" + '0' + "\t" + to_string(this->alt1_gt);
         records.push_back(rec_alt1);
 
-        if(this->alt2_type == 0) {
+        if(this->alt2.compare(".") == 0) {
             return records;
         }
 

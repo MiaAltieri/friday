@@ -106,3 +106,5 @@ class ImageGenerator:
         for img_record in image_record_set:
             summary_writer.write(img_record + '\n')
             indx += 1
+
+        return image_record_set
