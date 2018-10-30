@@ -255,6 +255,17 @@ def handle_output_directory(output_dir):
     return output_dir
 
 
+def boolean_string(s):
+    """
+    https://stackoverflow.com/questions/44561722/why-in-argparse-a-true-is-always-true
+    :param s:
+    :return:
+    """
+    if s.lower() not in {'false', 'true'}:
+        raise ValueError('Not a valid boolean string')
+    return s.lower() == 'true'
+
+
 if __name__ == '__main__':
     '''
     Processes arguments and performs tasks.
@@ -291,7 +302,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "--train_mode",
-        type=bool,
+        type=boolean_string,
         default=False,
         help="If true then a dry test is run."
     )
