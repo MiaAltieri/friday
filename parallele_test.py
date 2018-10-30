@@ -114,12 +114,13 @@ class View:
                                          end_position)
 
         reads = local_assembler.perform_local_assembly()
-        return len(reads)
-        # candidate_finder = CandidateFinder(self.fasta_path,
-        #                                    self.chromosome_name,
-        #                                    start_position,
-        #                                    end_position)
-        # candidates = candidate_finder.find_candidates(reads)
+
+        candidate_finder = CandidateFinder(self.fasta_handler,
+                                           self.chromosome_name,
+                                           start_position,
+                                           end_position)
+        candidates = candidate_finder.find_candidates(reads)
+        return len(reads), len(candidates)
         #
         # # get all labeled candidate sites
         # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
@@ -192,12 +193,15 @@ def chromosome_level_parallelization(chr_name,
                 vcf_path=vcf_file,
                 output_file_path=output_path)
     start_time = time.time()
+    total_reads_processed = 0
+    total_candidates = 0
     for interval in intervals:
         _start, _end = interval
-        total_reads = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id)
-        print("TOTAL READS PROCESSED IN REGION: ", _start, ",", _end, " :", total_reads)
+        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id)
+        total_reads_processed += n_reads
+        total_candidates += n_candidates
 
-    print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time)
+    print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time, 'READS: ', total_reads_processed, 'CANDIDATES: ', total_candidates)
 
 
 def summary_file_to_csv(output_dir_path, chr_list):

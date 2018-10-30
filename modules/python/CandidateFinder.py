@@ -1,8 +1,10 @@
 from build import FRIDAY
+from modules.python.Options import CandidateFinderOptions
+
 
 class CandidateFinder:
-    def __init__(self, fasta_file_path, contig, start, end):
-        self.fasta_file_path = fasta_file_path
+    def __init__(self, fasta_handler, contig, start, end):
+        self.fasta_handler = fasta_handler
         self.contig = contig
         self.region_start = start
         self.region_end = end
@@ -18,17 +20,20 @@ class CandidateFinder:
         #     ref_start = min(ref_start, read.pos)
         #     ref_end = max(ref_end, read.pos_end)
         # get the reference from the fasta file
-        fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)
-        reference_sequence = fasta_handler.get_reference_sequence(self.contig,
-                                                                  self.region_start - CandidateFinderOptions.SAFE_BASES,
-                                                                  self.region_end + CandidateFinderOptions.SAFE_BASES)
+        reference_sequence = self.fasta_handler.get_reference_sequence(self.contig,
+                                                                       self.region_start
+                                                                       - CandidateFinderOptions.SAFE_BASES,
+                                                                       self.region_end
+                                                                       + CandidateFinderOptions.SAFE_BASES)
         # find the active region
         candidate_finder = FRIDAY.CandidateFinder(reference_sequence,
                                                   self.contig,
                                                   self.region_start,
                                                   self.region_end,
-                                                  self.region_start - CandidateFinderOptions.SAFE_BASES,
-                                                  self.region_end + CandidateFinderOptions.SAFE_BASES)
+                                                  self.region_start
+                                                  - CandidateFinderOptions.SAFE_BASES,
+                                                  self.region_end
+                                                  + CandidateFinderOptions.SAFE_BASES)
 
         # find active regions
         candidates = candidate_finder.find_candidates(reads)
