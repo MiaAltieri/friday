@@ -1,38 +1,19 @@
 from build import FRIDAY
-
-
-class ActiveRegionOptions(object):
-    MIN_REGION_SIZE = 80
-    MAX_REGION_SIZE = 1000
-    REGION_EXPANSION = 25
-    MIN_MAPPING_QUALITY = 20
-    MIN_BASE_QUALITY = 20
-    # the linear regression model is used inside C++ code
+from modules.python.Options import ActiveRegionOptions
 
 
 class ActiveRegionFinder:
-    def __init__(self, bam_file_path, fasta_file_path, contig, start, end):
-        self.bam_file_path = bam_file_path
-        self.fasta_file_path = fasta_file_path
+    def __init__(self, contig, start, end, fasta_handler):
         self.contig = contig
         self.region_start = max(0, start - ActiveRegionOptions.REGION_EXPANSION)
         self.region_end = end + ActiveRegionOptions.REGION_EXPANSION
+        self.reference_sequence = fasta_handler.get_reference_sequence(self.contig,
+                                                                       self.region_start,
+                                                                       self.region_end)
 
-    def find_active_region(self):
-        # get the reads from the bam file
-        bam_handler = FRIDAY.BAM_handler(self.bam_file_path)
-        reads = bam_handler.get_reads(self.contig,
-                                      self.region_start,
-                                      self.region_end,
-                                      ActiveRegionOptions.MIN_MAPPING_QUALITY,
-                                      ActiveRegionOptions.MIN_BASE_QUALITY)
-
-        # get the reference from the fasta file
-        fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)
-        reference_sequence = fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
-
+    def find_active_region(self, reads):
         # find the active region
-        active_region_finder = FRIDAY.ActiveRegionFinder(reference_sequence,
+        active_region_finder = FRIDAY.ActiveRegionFinder(self.reference_sequence,
                                                          self.contig,
                                                          self.region_start,
                                                          self.region_end)

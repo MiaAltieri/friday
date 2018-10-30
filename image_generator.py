@@ -110,28 +110,28 @@ class View:
                                          start_position,
                                          end_position)
         reads = local_assembler.perform_local_assembly()
-
-        candidate_finder = CandidateFinder(self.fasta_path,
-                                           self.chromosome_name,
-                                           start_position,
-                                           end_position)
-        candidates = candidate_finder.find_candidates(reads)
-
-        # get all labeled candidate sites
-        labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
-
-        # if DEBUG_PRINT_CANDIDATES:
-        #     for candidate in labeled_sites:
-        #         print(candidate)
-
-        # generate and save candidate images
-        ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
-                                                          labeled_sites,
-                                                          str(thread_no),
-                                                          self.output_dir)
-
-        # end_time = time.time()
-        # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
+        #
+        # candidate_finder = CandidateFinder(self.fasta_path,
+        #                                    self.chromosome_name,
+        #                                    start_position,
+        #                                    end_position)
+        # candidates = candidate_finder.find_candidates(reads)
+        #
+        # # get all labeled candidate sites
+        # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+        #
+        # # if DEBUG_PRINT_CANDIDATES:
+        # #     for candidate in labeled_sites:
+        # #         print(candidate)
+        #
+        # # generate and save candidate images
+        # ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
+        #                                                   labeled_sites,
+        #                                                   str(thread_no),
+        #                                                   self.output_dir)
+        #
+        # # end_time = time.time()
+        # # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
 
 
 def parallel_run(chr_name, bam_file, ref_file, vcf_file, output_dir, start_pos, end_pos, conf_bed_tree, thread_no):

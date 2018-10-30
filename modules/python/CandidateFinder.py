@@ -1,13 +1,5 @@
 from build import FRIDAY
 
-
-class CandidateFinderOptions(object):
-    MIN_MAPPING_QUALITY = 14
-    MIN_BASE_QUALITY = 15
-    SAFE_BASES = 50
-    # the linear regression model is used inside C++ code
-
-
 class CandidateFinder:
     def __init__(self, fasta_file_path, contig, start, end):
         self.fasta_file_path = fasta_file_path

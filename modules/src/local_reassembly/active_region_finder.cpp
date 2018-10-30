@@ -96,6 +96,7 @@ vector< pair<long long, long long> > ActiveRegionFinder::find_active_region(vect
     vector<float> weight_vector(region_end - region_start + 1, ActiveRegionFinder_options::bias);
 
     for(auto &read:reads) {
+        if(read.mapping_quality < ActiveRegionFinder_options::min_mapping_quality) continue;
         update_weights(read, weight_vector);
     }
 

@@ -60,6 +60,7 @@ class View:
         self.vcf_path = vcf_path
         self.output_dir = output_file_path
         self.bam_handler = FRIDAY.BAM_handler(bam_file_path)
+        self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
 
         # --- initialize names ---
         # name of the chromosome
@@ -106,18 +107,18 @@ class View:
         """
         # st_time = time.time()
         # print("STARTING", thread_no, start_position, end_position)
-        local_assembler = LocalAssembler(self.bam_path,
-                                         self.fasta_path,
+        local_assembler = LocalAssembler(self.bam_handler,
+                                         self.fasta_handler,
                                          self.chromosome_name,
                                          start_position,
                                          end_position)
-        reads = local_assembler.perform_local_assembly()
 
-        candidate_finder = CandidateFinder(self.fasta_path,
-                                           self.chromosome_name,
-                                           start_position,
-                                           end_position)
-        candidates = candidate_finder.find_candidates(reads)
+        reads = local_assembler.perform_local_assembly()
+        # candidate_finder = CandidateFinder(self.fasta_path,
+        #                                    self.chromosome_name,
+        #                                    start_position,
+        #                                    end_position)
+        # candidates = candidate_finder.find_candidates(reads)
         #
         # # get all labeled candidate sites
         # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
@@ -176,7 +177,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
+    interval_start, interval_end = (265759, 266859)
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
         all_intervals.append((pos, pos + max_size))

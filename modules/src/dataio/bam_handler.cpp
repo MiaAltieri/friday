@@ -144,13 +144,13 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
             base_qualities.push_back(base_quality);
             char base = ::toupper(seq_nt16_str[bam_seqi(seqi, i)]);
             read_seq += base;
-//            if(base_quality < min_baseq or
-//               (base != 'A' &&
-//                base != 'C' &&
-//                base != 'G' &&
-//                base != 'T')) {
-//                bad_bases.push_back(i);
-//            }
+            if(base_quality < min_baseq or
+               (base != 'A' &&
+                base != 'C' &&
+                base != 'G' &&
+                base != 'T')) {
+                bad_bases.push_back(i);
+            }
         }
         bad_bases.push_back(read_seq.length() + 1);
 
