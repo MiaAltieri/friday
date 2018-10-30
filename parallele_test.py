@@ -114,6 +114,7 @@ class View:
                                          end_position)
 
         reads = local_assembler.perform_local_assembly()
+        return len(reads)
         # candidate_finder = CandidateFinder(self.fasta_path,
         #                                    self.chromosome_name,
         #                                    start_position,
@@ -177,8 +178,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
-    interval_start, interval_end = (265759, 266859)
+    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
+    # interval_start, interval_end = (265759, 266859)
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
         all_intervals.append((pos, pos + max_size))
@@ -193,7 +194,8 @@ def chromosome_level_parallelization(chr_name,
     start_time = time.time()
     for interval in intervals:
         _start, _end = interval
-        view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id)
+        total_reads = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id)
+        print("TOTAL READS PROCESSED IN REGION: ", _start, ",", _end, " :", total_reads)
 
     print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time)
 
