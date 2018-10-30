@@ -97,7 +97,7 @@ class View:
 
         return labeled_candidates
 
-    def parse_region(self, start_position, end_position, thread_no):
+    def parse_region(self, start_position, end_position, thread_no, summary_writer):
         """
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
@@ -120,7 +120,7 @@ class View:
                                            start_position,
                                            end_position)
         candidates = candidate_finder.find_candidates(reads)
-        return len(reads), len(candidates)
+
         #
         # # get all labeled candidate sites
         # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
@@ -130,10 +130,8 @@ class View:
         # #         print(candidate)
         #
         # # generate and save candidate images
-        # ImageGenerator.generate_and_save_candidate_images(self.chromosome_name,
-        #                                                   labeled_sites,
-        #                                                   str(thread_no),
-        #                                                   self.output_dir)
+        ImageGenerator.generate_and_save_candidate_images(candidates, summary_writer)
+        return len(reads), len(candidates)
         #
         # # end_time = time.time()
         # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
@@ -179,8 +177,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
-    # interval_start, interval_end = (265759, 266859)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
+    interval_start, interval_end = (265759, 266859)
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
         all_intervals.append((pos, pos + max_size))
@@ -192,12 +190,18 @@ def chromosome_level_parallelization(chr_name,
                 reference_file_path=ref_file,
                 vcf_path=vcf_file,
                 output_file_path=output_path)
+
+    smry = None
+    if intervals:
+        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+
     start_time = time.time()
     total_reads_processed = 0
     total_candidates = 0
     for interval in intervals:
         _start, _end = interval
-        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id)
+        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end, thread_no=thread_id,
+                                                  summary_writer=smry)
         total_reads_processed += n_reads
         total_candidates += n_candidates
 
@@ -248,14 +252,6 @@ def handle_output_directory(output_dir):
     # process the output directory
     if output_dir[-1] != "/":
         output_dir += "/"
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    # create an internal directory so we don't overwrite previous runs
-    timestr = time.strftime("%m%d%Y_%H%M%S")
-    internal_directory = "run_" + timestr + "/"
-    output_dir = output_dir + internal_directory
-
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
@@ -331,13 +327,14 @@ if __name__ == '__main__':
     #     sys.stderr.write(TextColor.PURPLE + "CONFIDENT TREE LOADED\n" + TextColor.END)
     # else:
     #     sys.stderr.write(TextColor.RED + "CONFIDENT BED IS NULL\n" + TextColor.END)
+    output_dir = handle_output_directory(FLAGS.output_dir)
     confident_intervals = None
     chromosome_level_parallelization(FLAGS.chromosome_name,
                                      FLAGS.bam,
                                      FLAGS.fasta,
                                      FLAGS.vcf,
                                      confident_intervals,
-                                     FLAGS.output_dir,
+                                     output_dir,
                                      FLAGS.threads,
                                      FLAGS.thread_id)
 

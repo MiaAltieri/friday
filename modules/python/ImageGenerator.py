@@ -90,28 +90,19 @@ class ImageGenerator:
             sys.stderr.write("ERROR SAVING FILE: " + save_dir + file_name + ".png" + "\n")
 
     @staticmethod
-    def generate_and_save_candidate_images(chromosome_name, candidate_list, thread_no, output_dir):
+    def generate_and_save_candidate_images(candidate_list, summary_writer):
         # declare the size of the image
         if len(candidate_list) == 0:
             return
-
-        # create summary file where the location of each image is recorded
-        contig = str(chromosome_name)
-        smry = open(output_dir + "summary/" + "summary" + '_' + contig + "_" + str(thread_no) + ".csv", 'w')
 
         # list of image records to be generated
         image_record_set = []
         # expand the records for sites where two alleles are found
         for candidate in candidate_list:
-            # print('Candidate: ', end='')
-            # candidate.print()
-            # print('Records: ', end='')
-            # for rec in candidate.get_candidate_record():
-            #     print(rec)
             image_record_set.extend(candidate.get_candidate_record())
 
         # index of the image we generate the images
         indx = 0
         for img_record in image_record_set:
-            smry.write(img_record + '\n')
+            summary_writer.write(img_record + '\n')
             indx += 1
