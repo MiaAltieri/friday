@@ -150,6 +150,7 @@ class BAM_handler {
     public:
         htsFile* hts_file;
         hts_idx_t* idx;
+        bam_hdr_t* header;
 
         BAM_handler(string path);
 

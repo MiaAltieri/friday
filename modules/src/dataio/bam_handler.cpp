@@ -17,16 +17,17 @@ BAM_handler::BAM_handler(string path) {
         cerr<<"INVALID BAM INDEX FILE. PLEASE CHECK IF FILE IS INDEXED: "<<path<<endl;
         exit (EXIT_FAILURE);
     }
-}
 
-set<string> BAM_handler::get_sample_names() {
-    bam_hdr_t* header;
-    header = sam_hdr_read(this->hts_file);
-    if(header == 0){
-        cerr<<"INVALID BAM FILE. PLEASE CHECK IF PATH IS CORRECT"<<endl;
+    // setting up the header
+    this->header = sam_hdr_read(this->hts_file);
+    if(this->header == 0){
+        cerr<<"HEADER ERROR: INVALID BAM FILE. PLEASE CHECK IF PATH IS CORRECT."<<endl;
         exit (EXIT_FAILURE);
     }
 
+}
+
+set<string> BAM_handler::get_sample_names() {
     int l_text = header->l_text;
     char *text = header->text;
     set<string> samples;
@@ -71,14 +72,6 @@ type_read_flags BAM_handler::get_read_flags(int flag) {
 }
 
 vector<type_sequence> BAM_handler::get_chromosome_sequence_names_with_length() {
-    // Setting up the header
-    bam_hdr_t* header;
-    header = sam_hdr_read(this->hts_file);
-    if(header == 0){
-        cerr<<"INVALID BAM FILE. PLEASE CHECK IF PATH IS CORRECT"<<endl;
-        exit (EXIT_FAILURE);
-    }
-
     // Get all the sequence names. These are the chromosome names from the bed header file.
     vector<type_sequence> sequence_names;
     int total_targets = header->n_targets;
@@ -95,13 +88,6 @@ vector<type_sequence> BAM_handler::get_chromosome_sequence_names_with_length() {
 }
 
 vector<string> BAM_handler::get_chromosome_sequence_names() {
-    // Setting up the header
-    bam_hdr_t* header;
-    header = sam_hdr_read(this->hts_file);
-    if(header == 0){
-        cerr<<"INVALID BAM FILE. PLEASE CHECK IF PATH IS CORRECT"<<endl;
-        exit (EXIT_FAILURE);
-    }
     // Get all the sequence names. These are the chromosome names from the bed header file.
     vector<string> sequence_names;
     int total_targets = header->n_targets;
@@ -116,16 +102,8 @@ vector<string> BAM_handler::get_chromosome_sequence_names() {
 vector<type_read> BAM_handler::get_reads(string chromosome, long long start, long long stop, int min_mapq=0, int min_baseq = 0) {
     vector <type_read> reads;
 
-    // Setting up the header
-    bam_hdr_t* header;
-    header = sam_hdr_read(this->hts_file);
-    if(header == 0){
-        cerr<<"INVALID BAM FILE. PLEASE CHECK IF PATH IS CORRECT"<<endl;
-        exit (EXIT_FAILURE);
-    }
-
     // get the id of the chromosome
-    const int tid = bam_name2id(header, chromosome.c_str());
+    const int tid = bam_name2id(this->header, chromosome.c_str());
 
     // get the iterator
     hts_itr_t *iter  = sam_itr_queryi(this->idx, tid, start, stop);
@@ -166,13 +144,13 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
             base_qualities.push_back(base_quality);
             char base = ::toupper(seq_nt16_str[bam_seqi(seqi, i)]);
             read_seq += base;
-            if(base_quality < min_baseq or
-               (base != 'A' &&
-                base != 'C' &&
-                base != 'G' &&
-                base != 'T')) {
-                bad_bases.push_back(i);
-            }
+//            if(base_quality < min_baseq or
+//               (base != 'A' &&
+//                base != 'C' &&
+//                base != 'G' &&
+//                base != 'T')) {
+//                bad_bases.push_back(i);
+//            }
         }
         bad_bases.push_back(read_seq.length() + 1);
 
@@ -215,8 +193,6 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
     }
     bam_destroy1(alignment);
     hts_itr_destroy(iter);
-    bam_hdr_destroy(header);
-
 
     return reads;
 }
@@ -225,4 +201,5 @@ BAM_handler::~BAM_handler() {
     // destroy everything
     hts_idx_destroy( this->idx );
     sam_close( this->hts_file );
+    bam_hdr_destroy( this->header );
 }
