@@ -43,7 +43,7 @@ class View:
     """
     Process manager that runs sequence of processes to generate images and their labebls.
     """
-    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, summary_writer):
+    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, summary_writer):
         """
         Initialize a manager object
         :param chromosome_name: Name of the chromosome
@@ -61,6 +61,7 @@ class View:
         self.summary_writer = summary_writer
         self.bam_handler = FRIDAY.BAM_handler(bam_file_path)
         self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
+        self.train_mode = train_mode
 
         # --- initialize names ---
         # name of the chromosome
@@ -121,16 +122,19 @@ class View:
                                            end_position)
         candidates = candidate_finder.find_candidates(reads)
 
-        #
         # # get all labeled candidate sites
-        # labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+        if self.train_mode:
+            labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+        else:
+            labeled_sites = candidates
         #
         # # if DEBUG_PRINT_CANDIDATES:
         # #     for candidate in labeled_sites:
         # #         print(candidate)
         #
         # # generate and save candidate images
-        img_set = ImageGenerator.generate_and_save_candidate_images(candidates, self.summary_writer)
+        ImageGenerator.generate_and_save_candidate_images(labeled_sites, self.summary_writer)
+
         return len(reads), len(candidates)
         #
         # # end_time = time.time()
@@ -163,6 +167,7 @@ def chromosome_level_parallelization(chr_name,
                                      output_path,
                                      total_threads,
                                      thread_id,
+                                     train_mode,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -179,6 +184,7 @@ def chromosome_level_parallelization(chr_name,
 
     interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name))
     # interval_start, interval_end = (265759, 269859)
+
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
         all_intervals.append((pos, pos + max_size))
@@ -193,7 +199,8 @@ def chromosome_level_parallelization(chr_name,
                 bam_file_path=bam_file,
                 reference_file_path=ref_file,
                 vcf_path=vcf_file,
-                summary_writer=smry)
+                summary_writer=smry,
+                train_mode=train_mode)
 
     start_time = time.time()
     total_reads_processed = 0
@@ -204,7 +211,9 @@ def chromosome_level_parallelization(chr_name,
         total_reads_processed += n_reads
         total_candidates += n_candidates
 
-    print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time, 'READS: ', total_reads_processed, 'CANDIDATES: ', total_candidates)
+    print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time,
+          'READS: ', total_reads_processed,
+          'CANDIDATES: ', total_candidates)
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
@@ -229,17 +238,6 @@ def summary_file_to_csv(output_dir_path, chr_list):
         filemanager_object.delete_files(file_paths)
         # remove the directory
         os.rmdir(path_to_dir)
-
-
-def test(view_object):
-    """
-    Run a test
-    :return:
-    """
-    start_time = time.time()
-    # view_object.parse_region(start_position=8926678, end_position=8927210, thread_no=1)
-    view_object.parse_region(start_position=265759, end_position=266859, thread_no=1)
-    print("TOTAL TIME ELAPSED: ", time.time()-start_time)
 
 
 def handle_output_directory(output_dir):
@@ -292,7 +290,7 @@ if __name__ == '__main__':
         help="Desired chromosome number E.g.: 3"
     )
     parser.add_argument(
-        "--test",
+        "--train_mode",
         type=bool,
         default=False,
         help="If true then a dry test is run."
@@ -334,5 +332,6 @@ if __name__ == '__main__':
                                      confident_intervals,
                                      FLAGS.output_dir,
                                      FLAGS.threads,
-                                     FLAGS.thread_id)
+                                     FLAGS.thread_id,
+                                     FLAGS.train_mode)
 
