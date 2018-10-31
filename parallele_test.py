@@ -203,8 +203,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    interval_start, interval_end = (265759, 269859)
+    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    # interval_start, interval_end = (265759, 269859)
 
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
