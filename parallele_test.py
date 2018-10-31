@@ -7,7 +7,7 @@ import multiprocessing
 from tqdm import tqdm
 
 from build import FRIDAY
-from modules.python.bam_handler import BamHandler
+from modules.python.IntervalTree import IntervalTree
 from modules.python.LocalRealignment import LocalAssembler
 from modules.python.CandidateFinder import CandidateFinder
 from modules.python.CandidateLabler import CandidateLabeler
@@ -43,7 +43,8 @@ class View:
     """
     Process manager that runs sequence of processes to generate images and their labebls.
     """
-    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, summary_writer):
+    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, summary_writer,
+                 confident_tree):
         """
         Initialize a manager object
         :param chromosome_name: Name of the chromosome
@@ -62,6 +63,8 @@ class View:
         self.bam_handler = FRIDAY.BAM_handler(bam_file_path)
         self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
         self.train_mode = train_mode
+        self.confident_tree = confident_tree[chromosome_name] if confident_tree else None
+        self.interval_tree = IntervalTree(self.confident_tree)
 
         # --- initialize names ---
         # name of the chromosome
@@ -98,6 +101,10 @@ class View:
 
         return labeled_candidates
 
+    @staticmethod
+    def overlap_length_between_ranges(range_a, range_b):
+        return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
+
     def parse_region(self, start_position, end_position):
         """
         Generate labeled images of a given region of the genome
@@ -124,7 +131,21 @@ class View:
 
         # # get all labeled candidate sites
         if self.train_mode:
-            labeled_sites = self.get_labeled_candidate_sites(candidates, start_position, end_position, True)
+            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            if not confident_intervals_in_region:
+                return 0, 0
+
+            confident_candidates = []
+            for candidate in candidates:
+                for interval in confident_intervals_in_region:
+                    if self.overlap_length_between_ranges((candidate.pos, candidate.pos_end), interval) > 0:
+                        confident_candidates.append(candidate)
+                        break
+
+            if not confident_candidates:
+                return 0, 0
+
+            labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position, True)
         else:
             labeled_sites = candidates
         #
@@ -182,8 +203,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (265759, 269859)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    interval_start, interval_end = (265759, 269859)
 
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
@@ -200,7 +221,8 @@ def chromosome_level_parallelization(chr_name,
                 reference_file_path=ref_file,
                 vcf_path=vcf_file,
                 summary_writer=smry,
-                train_mode=train_mode)
+                train_mode=train_mode,
+                confident_tree=confident_intervals)
 
     start_time = time.time()
     total_reads_processed = 0
@@ -286,13 +308,13 @@ if __name__ == '__main__':
     parser.add_argument(
         "--vcf",
         type=str,
-        required=True,
+        default=None,
         help="VCF file path."
     )
     parser.add_argument(
         "--bed",
         type=str,
-        default='',
+        default=None,
         help="Path to confident BED file"
     )
     parser.add_argument(
@@ -326,16 +348,19 @@ if __name__ == '__main__':
     )
     FLAGS, unparsed = parser.parse_known_args()
     # if the confident bed is not empty then create the tree
-    # if FLAGS.bed != '':
-    #     confident_intervals = View.build_chromosomal_interval_trees(FLAGS.bed)
-    # else:
-    #     confident_intervals = None
+    if FLAGS.bed:
+        confident_intervals = View.build_chromosomal_interval_trees(FLAGS.bed)
+    else:
+        confident_intervals = None
+
+    if FLAGS.train_mode and (not confident_intervals or not FLAGS.vcf):
+        sys.stderr.write(TextColor.RED + "ERROR: TRAIN MODE REQUIRES --vcf AND --bed TO BE SET.\n" + TextColor.END)
+        exit(1)
     #
     # if confident_intervals is not None:
     #     sys.stderr.write(TextColor.PURPLE + "CONFIDENT TREE LOADED\n" + TextColor.END)
     # else:
     #     sys.stderr.write(TextColor.RED + "CONFIDENT BED IS NULL\n" + TextColor.END)
-    confident_intervals = None
     chromosome_level_parallelization(FLAGS.chromosome_name,
                                      FLAGS.bam,
                                      FLAGS.fasta,
