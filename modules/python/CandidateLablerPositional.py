@@ -115,6 +115,9 @@ class CandidateLabeler:
         :return: genotype
         """
         gts = [0, 0]
+        if candidate.pos not in self.positional_vcf:
+            return gts
+
         for rec in self.positional_vcf[candidate.pos]:
             for alt in rec.alt_allele:
                 # alt_ref = alt.ref
