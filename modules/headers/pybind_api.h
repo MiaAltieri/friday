@@ -150,7 +150,8 @@ PYBIND11_MODULE(FRIDAY, m) {
         // VCF handler API
         py::class_<VCF_handler>(m, "VCF_handler")
             .def(py::init<const string &>())
-            .def("get_vcf_records", &VCF_handler::get_vcf_records);
+            .def("get_vcf_records", &VCF_handler::get_vcf_records)
+            .def("get_positional_vcf_records", &VCF_handler::get_positional_vcf_records);
 
         // VCF handler API
         py::class_<type_vcf_record>(m, "type_vcf_record")
@@ -164,6 +165,27 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("genotype", &type_vcf_record::genotype)
             .def_readwrite("filters", &type_vcf_record::filters)
             .def_readwrite("alleles", &type_vcf_record::alleles);
+
+
+        py::class_<type_alt_allele>(m, "type_alt_allele")
+            .def_readonly("ref", &type_alt_allele::ref)
+            .def_readonly("alt_allele", &type_alt_allele::alt_allele)
+            .def_readonly("alt_type", &type_alt_allele::alt_type)
+            .def("get_ref", &type_alt_allele::get_ref)
+            .def("get_alt_allele", &type_alt_allele::get_alt_allele)
+            .def("get_alt_type", &type_alt_allele::get_alt_type);
+
+        py::class_<type_positional_vcf_record>(m, "type_positional_vcf_record")
+            .def_readonly("chromosome_name", &type_positional_vcf_record::chromosome_name)
+            .def_readonly("start_pos", &type_positional_vcf_record::start_pos)
+            .def_readonly("end_pos", &type_positional_vcf_record::end_pos)
+            .def_readonly("id", &type_positional_vcf_record::id)
+            .def_readonly("qual", &type_positional_vcf_record::qual)
+            .def_readonly("is_filter_pass", &type_positional_vcf_record::is_filter_pass)
+            .def_readonly("sample_name", &type_positional_vcf_record::sample_name)
+            .def_readonly("genotype", &type_positional_vcf_record::genotype)
+            .def_readonly("filters", &type_positional_vcf_record::filters)
+            .def_readonly("alt_allele", &type_positional_vcf_record::alt_allele);
 
 }
 #endif //FRIDAY_PYBIND_API_H

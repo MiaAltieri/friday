@@ -10,7 +10,8 @@ from build import FRIDAY
 from modules.python.IntervalTree import IntervalTree
 from modules.python.LocalRealignment import LocalAssembler
 from modules.python.CandidateFinder import CandidateFinder
-from modules.python.CandidateLabler import CandidateLabeler
+# from modules.python.CandidateLabler import CandidateLabeler
+from modules.python.CandidateLablerPositional import CandidateLabeler
 from modules.python.TextColor import TextColor
 from modules.python.TsvHandler import TsvHandler
 from modules.python.FileManager import FileManager
@@ -84,7 +85,7 @@ class View:
 
         return intervals_chromosomal_reference
 
-    def get_labeled_candidate_sites(self, selected_candidate_list, start_pos, end_pos, filter_hom_ref=False):
+    def get_labeled_candidate_sites(self, selected_candidate_list, start_pos, end_pos):
         """
         Lable selected candidates of a region and return a list of records
         :param selected_candidate_list: List of all selected candidates with their alleles
@@ -93,11 +94,12 @@ class View:
         :param filter_hom_ref: whether to ignore hom_ref VCF records during candidate validation
         :return: labeled_sites: Labeled candidate sites. Each containing proper genotype.
         """
-        candidate_labler = CandidateLabeler(self.fasta_path, self.vcf_path)
-        labeled_candidates = candidate_labler.get_labeled_candidates(self.chromosome_name,
-                                                                     start_pos,
-                                                                     end_pos,
-                                                                     selected_candidate_list)
+        # candidate_labler = CandidateLabeler(self.fasta_path, self.vcf_path)
+        candidate_labler = CandidateLabeler(self.vcf_path,
+                                            self.chromosome_name,
+                                            start_pos,
+                                            end_pos)
+        labeled_candidates = candidate_labler.get_labeled_candidates(selected_candidate_list)
 
         return labeled_candidates
 
@@ -145,7 +147,8 @@ class View:
             if not confident_candidates:
                 return 0, 0
 
-            labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position, True)
+            # labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position, True)
+            labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position)
         else:
             labeled_sites = candidates
         #
@@ -204,7 +207,8 @@ def chromosome_level_parallelization(chr_name,
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
     interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (265759, 269859)
+    # interval_start, interval_end = (288245, 288738)
+    # interval_start, interval_end = (701150, 701170)
 
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
