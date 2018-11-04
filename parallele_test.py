@@ -126,11 +126,13 @@ class View:
             if not confident_intervals_in_region:
                 return 0, 0
 
-            confident_windows = []
-            for window in sequence_windows:
-                for interval in confident_intervals_in_region:
-                    if self.a_fully_contains_range_b(interval, window):
-                        confident_windows.append(window)
+            # confident_windows = []
+            # for window in sequence_windows:
+            #     for interval in confident_intervals_in_region:
+            #         if self.a_fully_contains_range_b(interval, window):
+            #             confident_windows.append(window)
+            # for a dry run, let's not subset the windows
+            confident_windows = sequence_windows
 
             if not confident_windows:
                 return 0, 0
@@ -194,8 +196,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    interval_start, interval_end = (288245, 289738)
+    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    # interval_start, interval_end = (288245, 289738)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (284250, 284450)
 
