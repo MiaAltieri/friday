@@ -52,6 +52,7 @@ struct PositionalCandidateRecord{
         this->pos_end = pos_end;
         this->ref = ref;
         this->alt1 = alt1;
+        this->alt2 = alt2;
         this->alt1_type = alt1_type;
         this->alt2_type = alt2_type;
     }
