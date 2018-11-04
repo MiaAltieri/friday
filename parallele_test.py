@@ -112,13 +112,22 @@ class View:
 
         reads = local_assembler.perform_local_assembly()
 
+        if not reads:
+            return 0, 0, None, None
+
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
                                            start_position,
                                            end_position)
         candidate_positions, candidate_map, reference_seq, ref_start, ref_end = candidate_finder.find_candidates(reads)
 
+        if not candidate_positions:
+            return 0, 0, None, None
+
         sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
+
+        if not sequence_windows:
+            return 0, 0, None, None
 
         # # get all labeled candidate sites
         if self.train_mode:
