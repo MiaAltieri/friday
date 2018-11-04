@@ -206,7 +206,7 @@ def chromosome_level_parallelization(chr_name,
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
     interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (40451000, 40451150)
+    # interval_start, interval_end = (350000, 351000)
     # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (284250, 284450)

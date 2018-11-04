@@ -135,7 +135,7 @@ class ImageGenerator:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
                     if read_array:
                         anchor_pixel = read_array.pop()
-                    if i == 0:
+                    else:
                         _st -= 1
                     read_allele = read_sequence[read_index:read_index+cigar_len]
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
@@ -169,7 +169,7 @@ class ImageGenerator:
 
                     if read_array:
                         anchor_pixel = read_array.pop()
-                    if i == 0:
+                    else:
                         _st -= 1
 
                     # pixel construction, most of the channels will be 0 as it's delete
@@ -263,7 +263,7 @@ class ImageGenerator:
             if len(read_segment_array) != 20:
                 print('READ', _st, _end, len(read_array))
                 print('WINDOW', window_start, window_end)
-                print(read.pos_end <= window_start)
+                print('REF', self.ref_start, self.ref_end)
                 print(segment_read_start, segment_read_end)
                 print(ref_seq)
                 self.decode_image_row(read_segment_array)
