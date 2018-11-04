@@ -215,7 +215,13 @@ class ImageGenerator:
         window_start, window_end = window
 
         ref_seq = self.ref_seq[window_start-self.ref_start:window_end-self.ref_start]
+
         ref_array = self.get_ref_row(ref_seq)
+        if len(ref_array) != 20:
+            print(ref_array)
+            print(ref_seq)
+            print(window_start, window_end, self.ref_start, self.ref_end, len(self.ref_seq), window_start-self.ref_start, window_end-self.ref_start)
+            exit()
         # print(window_end-window_start)
         whole_image = []
         whole_image.extend([ref_array] * REF_BAND_SIZE)
@@ -260,7 +266,7 @@ class ImageGenerator:
             read_segment_array.extend(core_values)
             read_segment_array.extend(right_empty)
 
-            if len(read_segment_array) != (window_end-window_start):
+            if len(read_segment_array) != 20:
                 print('READ', _st, _end, len(read_array))
                 print('WINDOW', window_start, window_end)
                 print('REF', self.ref_start, self.ref_end)
@@ -277,12 +283,6 @@ class ImageGenerator:
                 print(len(left_empty), len(core_values), len(right_empty))
                 exit()
 
-            for pixel in read_segment_array:
-                if len(pixel) != 5:
-                    print('Window', window_start, window_end)
-                    print('Read', _st, _end, len(read_array), len(read_segment_array))
-                    exit(0)
-
             if len(whole_image) < image_height:
                 whole_image.append(read_segment_array)
 
@@ -292,9 +292,6 @@ class ImageGenerator:
         # for row in whole_image:
         #     self.decode_image_row(row)
         # print("-------------------------")
-
-
-
         empty_rows = image_height - len(whole_image)
         for i in range(empty_rows):
             empty_row = [[0, 0, 0, 0, 0]] * (window_end - window_start)
@@ -303,16 +300,21 @@ class ImageGenerator:
         if len(whole_image) != image_height:
             print("IMAGE HEIGHT ERROR")
             print('Window', window_start, window_end)
+            exit(0)
 
-        for row in whole_image:
+        for i, row in enumerate(whole_image):
+
             if len(row) != 20:
-                print("IMAGE ROW ERROR")
+                print(row)
+                print(empty_rows)
+                print("IMAGE ROW ERROR", len(row), i)
                 print('Window', window_start, window_end)
+                exit(0)
             for pixel in row:
                 if len(pixel) != 5:
                     print("IMAGE PIXEL ERROR")
                     print('Window', window_start, window_end)
-
+                    exit(0)
 
         np_array_image = np.array(whole_image, dtype=np.uint8)
         np_array_image = np_array_image.transpose(2, 0, 1)
