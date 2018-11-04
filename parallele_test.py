@@ -122,9 +122,9 @@ class View:
 
         # # get all labeled candidate sites
         if self.train_mode:
-            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
-            if not confident_intervals_in_region:
-                return 0, 0
+            # confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            # if not confident_intervals_in_region:
+            #     return 0, 0, None, None
 
             # confident_windows = []
             # for window in sequence_windows:
@@ -135,7 +135,7 @@ class View:
             confident_windows = sequence_windows
 
             if not confident_windows:
-                return 0, 0
+                return 0, 0, None, None
 
             image_generator = ImageGenerator(self.vcf_path,
                                              reference_seq,
@@ -225,6 +225,11 @@ def chromosome_level_parallelization(chr_name,
     for interval in intervals:
         _start, _end = interval
         n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+        total_reads_processed += n_reads
+        total_windows += n_windows
+
+        if not images or not candidate_map:
+            continue
         # save the dictionary
         dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
         with open(dictionary_file_path, 'wb') as f:
@@ -244,8 +249,7 @@ def chromosome_level_parallelization(chr_name,
                              ' '.join(map(str, image[0])) + "\n"
             smry.write(summary_string)
 
-        total_reads_processed += n_reads
-        total_windows += n_windows
+
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,
