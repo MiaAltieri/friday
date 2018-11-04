@@ -93,7 +93,7 @@ class ImageGenerator:
         _st = max(min(read.pos, self.ref_end), self.ref_start)
         # _end = min(read.pos_end, self.ref_end)
 
-        for cigar in cigartuples:
+        for i, cigar in enumerate(cigartuples):
             cigar_op = cigar.cigar_op
             cigar_len = cigar.cigar_len
             if cigar_op == CIGAR_OPERATIONS.MATCH or \
@@ -135,6 +135,8 @@ class ImageGenerator:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
                     if read_array:
                         anchor_pixel = read_array.pop()
+                    if i == 0:
+                        _st -= 1
                     read_allele = read_sequence[read_index:read_index+cigar_len]
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
                     in_allele = ref_allele + read_allele
@@ -160,6 +162,8 @@ class ImageGenerator:
                cigar_op == CIGAR_OPERATIONS.REF_SKIP or \
                cigar_op == CIGAR_OPERATIONS.PAD:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
+                    if i == 0:
+                        _st -= 1
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
                     read_allele = self.ref_seq[ref_pos-self.ref_start - 1:ref_pos-self.ref_start + cigar_len]
                     alt_channel = self.get_which_allele(ref_pos - 1, ref_allele, read_allele, DEL_CANDIDATE)
@@ -251,6 +255,18 @@ class ImageGenerator:
             read_segment_array.extend(core_values)
             read_segment_array.extend(right_empty)
 
+            # if len(read_segment_array) != 20:
+            #     print(ref_seq)
+            #     self.decode_image_row(read_segment_array)
+            #     print('Window', window_start, window_end)
+            #     print('Read', _st, _end, len(read_array))
+            #     print(read.pos, read.sequence)
+            #     for ct in read.cigar_tuples:
+            #         print(ct.cigar_op, ct.cigar_len)
+            #     print(segment_read_start, segment_read_end)
+            #     print(len(left_empty), len(core_values), len(right_empty))
+            #     exit()
+
             if len(whole_image) < image_height:
                 whole_image.append(read_segment_array)
 
@@ -259,6 +275,7 @@ class ImageGenerator:
 
         # for row in whole_image:
         #     self.decode_image_row(row)
+        # print("-------------------------")
 
         empty_rows = image_height - len(whole_image)
         for i in range(empty_rows):
@@ -267,6 +284,8 @@ class ImageGenerator:
 
         np_array_image = np.array(whole_image, dtype=np.uint8)
         np_array_image = np_array_image.transpose(2, 0, 1)
+
+
 
         return torch.from_numpy(np_array_image)
 

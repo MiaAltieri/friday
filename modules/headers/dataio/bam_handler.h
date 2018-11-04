@@ -128,6 +128,14 @@ struct type_read{
         this->mapping_quality = that.mapping_quality;
         this->base_qualities = that.base_qualities;
     }
+
+    bool operator<(const type_read& that) {
+        if(this->pos == that.pos) {
+            return this->pos_end < that.pos_end;
+        } else {
+            return this->pos < that.pos;
+        }
+    }
 };
 
 typedef struct{

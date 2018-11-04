@@ -198,6 +198,7 @@ def chromosome_level_parallelization(chr_name,
 
     interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
     # interval_start, interval_end = (288245, 289738)
+    # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (284250, 284450)
 
@@ -248,8 +249,6 @@ def chromosome_level_parallelization(chr_name,
             summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
                              ' '.join(map(str, image[0])) + "\n"
             smry.write(summary_string)
-
-
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,

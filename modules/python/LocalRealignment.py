@@ -146,4 +146,6 @@ class LocalAssembler:
         for active_region in assembly_active_regions:
             realigned_reads.extend(self.perform_local_alignment(active_region))
 
+        realigned_reads = sorted(realigned_reads)
+
         return realigned_reads

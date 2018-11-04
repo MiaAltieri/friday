@@ -16,6 +16,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/operators.h>
 namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
@@ -149,6 +150,7 @@ PYBIND11_MODULE(FRIDAY, m) {
         // data structure for read
         py::class_<type_read>(m, "type_read")
             .def("set_read_id", &type_read::set_read_id)
+            .def("__lt__", &type_read::operator<, py::is_operator())
             .def_readwrite("pos", &type_read::pos)
             .def_readwrite("pos_end", &type_read::pos_end)
             .def_readwrite("query_name", &type_read::query_name)
