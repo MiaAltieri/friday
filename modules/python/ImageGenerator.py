@@ -135,7 +135,7 @@ class ImageGenerator:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
                     if read_array:
                         anchor_pixel = read_array.pop()
-                    else:
+                    if i == 0:
                         _st -= 1
                     read_allele = read_sequence[read_index:read_index+cigar_len]
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
@@ -169,7 +169,7 @@ class ImageGenerator:
 
                     if read_array:
                         anchor_pixel = read_array.pop()
-                    else:
+                    if i == 0:
                         _st -= 1
 
                     # pixel construction, most of the channels will be 0 as it's delete
@@ -194,7 +194,7 @@ class ImageGenerator:
             # if cigar_op == CIGAR_OPERATIONS.REF_SKIP or cigar_op == CIGAR_OPERATIONS.PAD:
             #     ref_pos += cigar_len
 
-        return read_array, _st, ref_pos
+        return read_array, _st, min(ref_pos, self.ref_end)
 
     def decode_image_row(self, read_array):
         for pixel in read_array:
@@ -235,33 +235,36 @@ class ImageGenerator:
             segment_read_end = len(read_array)
             empties_on_right = 0
 
-            if _end < window_start:
+            if _end <= window_start:
                 continue
-            if _st > window_end:
+            if _st >= window_end:
                 continue
 
             if _st < window_start:
                 segment_read_start = window_start - _st
-
-            if _st > window_start:
+            elif _st > window_start:
                 empties_on_left = _st - window_start
 
             if _end > window_end:
                 segment_read_end = window_end - _st
-
-            if _end < window_end:
+            elif _end < window_end:
                 empties_on_right = window_end - _end
             left_empty = [[0, 0, 0, 0, 0]] * empties_on_left
             right_empty = [[0, 0, 0, 0, 0]] * empties_on_right
             # print(_st, _end, window_start, window_end)
             # print(segment_read_start, segment_read_end)
+            if segment_read_start == segment_read_end:
+                segment_read_end += 1
             core_values = read_array[segment_read_start:segment_read_end]
             read_segment_array.extend(left_empty)
             read_segment_array.extend(core_values)
             read_segment_array.extend(right_empty)
 
             if len(read_segment_array) != 20:
-                print(read.pos_end <= window_start, read.pos_end, window_start)
+                print('READ', _st, _end, len(read_array))
+                print('WINDOW', window_start, window_end)
+                print(read.pos_end <= window_start)
+                print(segment_read_start, segment_read_end)
                 print(ref_seq)
                 self.decode_image_row(read_segment_array)
                 print('Window', window_start, window_end)

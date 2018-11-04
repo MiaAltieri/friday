@@ -14,8 +14,9 @@ class CandidateFinder:
         return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
 
     def find_candidates(self, reads):
-        ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
-        ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
+        ref_start = max(0, reads[0].pos - CandidateFinderOptions.SAFE_BASES)
+        ref_end = reads[-1].pos_end + CandidateFinderOptions.SAFE_BASES
+
         reference_sequence = self.fasta_handler.get_reference_sequence(self.contig,
                                                                        ref_start,
                                                                        ref_end)
