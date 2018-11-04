@@ -135,7 +135,7 @@ class ImageGenerator:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
                     if read_array:
                         anchor_pixel = read_array.pop()
-                    if i == 0:
+                    else:
                         _st -= 1
                     read_allele = read_sequence[read_index:read_index+cigar_len]
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
@@ -162,8 +162,6 @@ class ImageGenerator:
                cigar_op == CIGAR_OPERATIONS.REF_SKIP or \
                cigar_op == CIGAR_OPERATIONS.PAD:
                 if self.ref_start <= ref_pos - 1 < self.ref_end:
-                    if i == 0:
-                        _st -= 1
                     ref_allele = self.ref_seq[ref_pos-self.ref_start - 1]
                     read_allele = self.ref_seq[ref_pos-self.ref_start - 1:ref_pos-self.ref_start + cigar_len]
                     alt_channel = self.get_which_allele(ref_pos - 1, ref_allele, read_allele, DEL_CANDIDATE)
@@ -171,6 +169,8 @@ class ImageGenerator:
 
                     if read_array:
                         anchor_pixel = read_array.pop()
+                    else:
+                        _st -= 1
 
                     # pixel construction, most of the channels will be 0 as it's delete
                     alt_color = 0
@@ -235,6 +235,11 @@ class ImageGenerator:
             segment_read_end = len(read_array)
             empties_on_right = 0
 
+            if _end < window_start:
+                continue
+            if _st > window_end:
+                continue
+
             if _st < window_start:
                 segment_read_start = window_start - _st
 
@@ -255,17 +260,19 @@ class ImageGenerator:
             read_segment_array.extend(core_values)
             read_segment_array.extend(right_empty)
 
-            # if len(read_segment_array) != 20:
-            #     print(ref_seq)
-            #     self.decode_image_row(read_segment_array)
-            #     print('Window', window_start, window_end)
-            #     print('Read', _st, _end, len(read_array))
-            #     print(read.pos, read.sequence)
-            #     for ct in read.cigar_tuples:
-            #         print(ct.cigar_op, ct.cigar_len)
-            #     print(segment_read_start, segment_read_end)
-            #     print(len(left_empty), len(core_values), len(right_empty))
-            #     exit()
+            if len(read_segment_array) != 20:
+                print(read.pos_end <= window_start, read.pos_end, window_start)
+                print(ref_seq)
+                self.decode_image_row(read_segment_array)
+                print('Window', window_start, window_end)
+                print('Read', _st, _end, len(read_array), len(read_segment_array))
+                print(len(left_empty), len(right_empty), len(core_values))
+                print(read.pos, read.sequence)
+                for ct in read.cigar_tuples:
+                    print(ct.cigar_op, ct.cigar_len)
+                print(segment_read_start, segment_read_end)
+                print(len(left_empty), len(core_values), len(right_empty))
+                exit()
 
             if len(whole_image) < image_height:
                 whole_image.append(read_segment_array)
