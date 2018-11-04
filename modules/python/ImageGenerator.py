@@ -293,10 +293,26 @@ class ImageGenerator:
         #     self.decode_image_row(row)
         # print("-------------------------")
 
+
+
         empty_rows = image_height - len(whole_image)
         for i in range(empty_rows):
             empty_row = [[0, 0, 0, 0, 0]] * (window_end - window_start)
             whole_image.append(empty_row)
+
+        if len(whole_image) != image_height:
+            print("IMAGE HEIGHT ERROR")
+            print('Window', window_start, window_end)
+
+        for row in whole_image:
+            if len(row) != 20:
+                print("IMAGE ROW ERROR")
+                print('Window', window_start, window_end)
+            for pixel in row:
+                if len(pixel) != 5:
+                    print("IMAGE PIXEL ERROR")
+                    print('Window', window_start, window_end)
+
 
         np_array_image = np.array(whole_image, dtype=np.uint8)
         np_array_image = np_array_image.transpose(2, 0, 1)
