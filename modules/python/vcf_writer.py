@@ -1,13 +1,15 @@
 from pysam import VariantFile, VariantHeader
-from collections import defaultdict
 from modules.python.bam_handler import BamHandler
 import math
 import time
 import numpy as np
 
-DEL_TYPE = '3'
-IN_TYPE = '2'
-SNP_TYPE = '1'
+DEL_TYPE = 3
+IN_TYPE = 2
+SNP_TYPE = 1
+HOM = 0
+HET = 1
+HOM_ALT = 2
 
 
 class VCFWriter:
@@ -16,6 +18,7 @@ class VCFWriter:
         bam_file_name = bam_file_path.rstrip().split('/')[-1].split('.')[0]
         vcf_header = self.get_vcf_header(sample_name)
         time_str = time.strftime("%m%d%Y_%H%M%S")
+
         self.vcf_file = VariantFile(output_dir + bam_file_name + '_' + time_str + '.vcf', 'w', header=vcf_header)
 
     def write_vcf_record(self, chrm, st_pos, end_pos, ref, alts, genotype, qual, gq, rec_filter):
@@ -23,9 +26,26 @@ class VCFWriter:
         genotype = self.get_genotype_tuple(genotype)
         end_pos = int(end_pos) + 1
         st_pos = int(st_pos)
-        vcf_record = self.vcf_file.new_record(contig=chrm, start=st_pos, stop=end_pos, id='.', qual=qual,
+        vcf_record = self.vcf_file.new_record(contig=str(chrm), start=st_pos, stop=end_pos, id='.', qual=qual,
                                               filter=rec_filter, alleles=alleles, GT=genotype, GQ=gq)
         self.vcf_file.write(vcf_record)
+
+    @staticmethod
+    def prediction_label_to_allele(label):
+        label_to_allele = {0:  ['0', '0'],  1:  ['0', '1'], 2:  ['1', '1'], 3:  ['0', '2'], 4:  ['2', '2'],
+                           5:  ['1', '2']}
+        return label_to_allele[label]
+
+    @staticmethod
+    def get_qual_and_gq(probabilities, predicted_class):
+        qual = 1.0 - probabilities[0]
+        phred_qual = min(60, -10 * np.log10(1 - qual) if 1 - qual >= 0.0000001 else 60)
+        phred_qual = math.ceil(phred_qual * 100.0) / 100.0
+
+        gq = probabilities[predicted_class]
+        phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
+        phred_gq = math.ceil(phred_gq * 100.0) / 100.0
+        return phred_qual, phred_gq
 
     @staticmethod
     def solve_multiple_alts(alts, ref):
@@ -56,10 +76,10 @@ class VCFWriter:
 
     @staticmethod
     def solve_single_alt(alts, ref):
-        # print(alts)
-        alt1, alt_type = alts
+        alt1, alt_type = alts[0]
         if alt_type == DEL_TYPE:
             return alt1, ref, '.'
+
         return ref, alt1, '.'
 
     @staticmethod
@@ -69,126 +89,79 @@ class VCFWriter:
         return tuple(split_values)
 
     @staticmethod
-    def get_genotype_for_multiple_allele(records):
+    def process_prediction(pos, predictions):
+        # get the list of prediction labels
+        list_prediction_labels = [label for label, probs in predictions]
+        predicted_class = max(set(list_prediction_labels), key=list_prediction_labels.count)
 
-        ref = '.'
-        st_pos = 0
-        end_pos = 0
-        chrm = ''
-        rec_alt1 = '.'
-        rec_alt2 = '.'
-        alt_probs = defaultdict(list)
-        alt_with_types = []
-        for record in records:
-            chrm = record[0]
-            st_pos = record[1]
-            end_pos = record[2]
-            ref = record[3]
-            alt1 = record[4]
-            alt2 = record[5]
-            alt1_type = record[6]
-            alt2_type = record[7]
-            if alt1 != '.' and alt2 != '.':
-                rec_alt1 = (alt1, alt1_type)
-                rec_alt2 = (alt2, alt2_type)
-                alt_probs['both'] = (record[8:])
-            else:
-                alt_probs[(alt1, alt1_type)] = (record[8:])
-                alt_with_types.append((alt1, record[6]))
+        # get alts from label
+        genotype = VCFWriter.prediction_label_to_allele(predicted_class)
+        genotype = genotype[0] + '/' + genotype[1]
 
-        if rec_alt1 not in alt_probs or rec_alt2 not in alt_probs or 'both' not in alt_probs:
-            print(record)
-        p00 = min(alt_probs[rec_alt1][0], alt_probs[rec_alt2][0], alt_probs['both'][0])
-        p01 = min(alt_probs[rec_alt1][1], alt_probs['both'][1])
-        p11 = min(alt_probs[rec_alt1][2], alt_probs['both'][2])
-        p02 = min(alt_probs[rec_alt2][1], alt_probs['both'][1])
-        p22 = min(alt_probs[rec_alt2][2], alt_probs['both'][2])
-        p12 = min(max(alt_probs[rec_alt1][1], alt_probs[rec_alt1][2]),
-                  max(alt_probs[rec_alt2][1], alt_probs[rec_alt2][2]),
-                  max(alt_probs['both'][1], alt_probs['both'][2]))
-        # print(alt_probs)
-        prob_list = [p00, p01, p11, p02, p22, p12]
-        # print(prob_list)
-        sum_probs = sum(prob_list)
-        # print(sum_probs)
-        normalized_list = [(float(i) / sum_probs) if sum_probs else 0 for i in prob_list]
-        prob_list = normalized_list
-        # print(prob_list)
-        # print(sum(prob_list))
-        genotype_list = ['0/0', '0/1', '1/1', '0/2', '2/2', '1/2']
-        gq, index = 0, 0
-        for i, prob in enumerate(prob_list):
-            if gq <= prob and prob > 0:
-                index = i
-                gq = prob
-        qual = sum(prob_list) - prob_list[0]
-        if index == 5:
-            ref, rec_alt1, rec_alt2 = VCFWriter.solve_multiple_alts(alt_with_types, ref)
-        else:
-            if index <= 2:
-                ref, rec_alt1, rec_alt2 = VCFWriter.solve_single_alt(alt_with_types[0], ref)
-            else:
-                ref, rec_alt2, rec_alt1 = VCFWriter.solve_single_alt(alt_with_types[1], ref)
+        # get the probabilities
+        list_prediction_probabilities = [probs for label, probs in predictions]
+        num_classes = len(list_prediction_probabilities[0])
+        min_probs_for_each_class = [min(l[i] for l in list_prediction_probabilities) for i in range(num_classes)]
 
-        phred_qual = min(60, -10 * np.log10(1 - qual) if 1 - qual >= 0.0000001 else 60)
-        phred_qual = math.ceil(phred_qual * 100.0) / 100.0
-        phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
-        phred_gq = math.ceil(phred_gq * 100.0) / 100.0
+        # normalize the probabilities
+        sum_of_probs = sum(min_probs_for_each_class) if sum(min_probs_for_each_class) > 0 else 1
+        if sum(min_probs_for_each_class) <= 0:
+            print("SUM ZERO ENCOUNTERED IN: ", pos, predictions)
+            exit()
+        probabilities = [float(i) / sum_of_probs for i in min_probs_for_each_class]
 
-        return chrm, st_pos, end_pos, ref, [rec_alt1, rec_alt2], genotype_list[index], phred_qual, phred_gq
+        qual, gq = VCFWriter.get_qual_and_gq(probabilities, predicted_class)
+
+        return genotype, qual, gq
 
     @staticmethod
-    def get_genotype_for_single_allele(records):
-        for record in records:
-            probs = [record[8], record[9], record[10]]
-            genotype_list = ['0/0', '0/1', '1/1']
-            gq, index = max([(v, i) for i, v in enumerate(probs)])
-            qual = sum(probs) - probs[0]
-            ref = record[3]
-            alt_with_types = list()
-            alt_with_types.append((record[4], record[6]))
-            # print(alt_with_types)
-            ref, alt1, alt2 = VCFWriter.solve_single_alt(alt_with_types[0], ref)
-            # print(ref, rec_alt1, rec_alt2)
-            phred_qual = min(60, -10 * np.log10(1 - qual) if 1 - qual >= 0.0000001 else 60)
-            phred_qual = math.ceil(phred_qual * 100.0) / 100.0
-            phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
-            phred_gq = math.ceil(phred_gq * 100.0) / 100.0
+    def get_proper_alleles(positional_record, genotype):
+        alts = [(positional_record.alt1, positional_record.alt1_type),
+                (positional_record.alt2, positional_record.alt2_type)]
 
-            return record[0], record[1], record[2], ref, [alt1, alt2], genotype_list[index], phred_qual, phred_gq
-
-    @staticmethod
-    def get_proper_alleles(record):
-        chrm, st_pos, end_pos, ref, alt_field, genotype, phred_qual, phred_gq = record
         gts = genotype.split('/')
         refined_alt = []
-        refined_gt = genotype
-        if gts[0] == '1' or gts[1] == '1':
-            refined_alt.append(alt_field[0])
-        if gts[0] == '2' or gts[1] == '2':
-            refined_alt.append(alt_field[1])
+
         if gts[0] == '0' and gts[1] == '0':
             refined_alt.append('.')
+        if gts[0] == '1' or gts[1] == '1':
+            refined_alt.append(alts[0])
+        if gts[0] == '2' or gts[1] == '2':
+            if len(alts) > 1:
+                refined_alt.append(alts[1])
+            elif genotype == '0/2':
+                refined_alt.append(alts[0])
+                genotype = '0/1'
+            elif genotype == '2/2':
+                refined_alt.append(alts[0])
+                genotype = '1/1'
+            elif genotype == '1/2':
+                genotype = '0/1'
+
+        if len(refined_alt) == 1:
+            ref, alt1, alt2 = VCFWriter.solve_single_alt(refined_alt, positional_record.ref)
+        else:
+            ref, alt1, alt2 = VCFWriter.solve_multiple_alts(refined_alt, positional_record.ref)
+
+        refined_alt = [alt1, alt2]
+        refined_gt = genotype
         if genotype == '0/2':
             refined_gt = '0/1'
         if genotype == '2/2':
             refined_gt = '1/1'
 
-        end_pos = st_pos + len(ref) - 1
-        record = chrm, st_pos, end_pos, ref, refined_alt, refined_gt, phred_qual, phred_gq
-
-        return record
+        return ref, refined_alt, refined_gt
 
     @staticmethod
     def get_filter(record, last_end):
         chrm, st_pos, end_pos, ref, alt_field, genotype, phred_qual, phred_gq = record
-        if st_pos <= last_end:
+        if st_pos < last_end:
             return 'conflictPos'
         if genotype == '0/0':
             return 'refCall'
-        if phred_qual <= 1:
+        if phred_qual < 0:
             return 'lowQUAL'
-        if phred_gq <= 1:
+        if phred_gq < 0:
             return 'lowGQ'
         return 'PASS'
 

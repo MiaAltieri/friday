@@ -12,6 +12,7 @@
 #include "local_reassembly/debruijn_graph.h"
 #include "local_reassembly/aligner.h"
 #include "candidate_finding/candidate_finder.h"
+#include "image_generator/image_generator.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -19,10 +20,15 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
 
+
+
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
+            .def(py::init<const string &, long long &, long long&, const string &,
+        const string &, const string &, const int &, const int &>())
             .def("print", &PositionalCandidateRecord::print)
             .def("set_genotype", &PositionalCandidateRecord::set_genotype)
+            .def("get_candidate_record", &PositionalCandidateRecord::get_candidate_record)
             .def_readwrite("chromosome_name", &PositionalCandidateRecord::chromosome_name)
             .def_readwrite("pos", &PositionalCandidateRecord::pos)
             .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
@@ -31,11 +37,30 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("alt2", &PositionalCandidateRecord::alt2)
             .def_readwrite("alt1_type", &PositionalCandidateRecord::alt1_type)
             .def_readwrite("alt2_type", &PositionalCandidateRecord::alt2_type)
-            .def_readwrite("labeled", &PositionalCandidateRecord::labeled)
-            .def_readwrite("alt1_gt", &PositionalCandidateRecord::alt1_gt)
-            .def_readwrite("alt2_gt", &PositionalCandidateRecord::alt2_gt)
-            .def_readwrite("genotype", &PositionalCandidateRecord::genotype)
-            .def("get_candidate_record", &PositionalCandidateRecord::get_candidate_record);
+            .def(py::pickle(
+                    [](const PositionalCandidateRecord &p) { // __getstate__
+                        /* Return a tuple that fully encodes the state of the object */
+                        return py::make_tuple(p.chromosome_name, p.pos, p.pos_end, p.ref, p.alt1, p.alt2, p.alt1_type, p.alt2_type);
+                    },
+                    [](py::tuple t) { // __setstate__
+                        if (t.size() != 8)
+                            throw std::runtime_error("Invalid state!");
+
+                        /* Create a new C++ instance */
+                        PositionalCandidateRecord p(t[0].cast<string>(), t[1].cast<long long>(), t[2].cast<long long>(), t[3].cast<string>(),
+                                                    t[4].cast<string>(), t[5].cast<string>(), t[6].cast<int>(), t[7].cast<int>());
+
+                        /* Assign any additional state */
+                        //dp.setExtra(t[1].cast<int>());
+
+                        return p;
+                    }
+            ));
+
+        py::class_<ImageGenerator>(m, "ImageGenerator")
+            .def(py::init<>())
+            .def("generate_image", &ImageGenerator::generate_image);
+
 
         // Candidate finder
         py::class_<CandidateFinder>(m, "CandidateFinder")
@@ -123,9 +148,11 @@ PYBIND11_MODULE(FRIDAY, m) {
 
         // data structure for read
         py::class_<type_read>(m, "type_read")
+            .def("set_read_id", &type_read::set_read_id)
             .def_readwrite("pos", &type_read::pos)
             .def_readwrite("pos_end", &type_read::pos_end)
             .def_readwrite("query_name", &type_read::query_name)
+            .def_readwrite("read_id", &type_read::read_id)
             .def_readwrite("flags", &type_read::flags)
             .def_readwrite("sequence", &type_read::sequence)
             .def_readwrite("cigar_tuples", &type_read::cigar_tuples)

@@ -3,8 +3,10 @@ import math
 import time
 import os
 import sys
-import multiprocessing
-from tqdm import tqdm
+import zipfile
+from torchvision.utils import save_image
+import torch
+import pickle
 
 from build import FRIDAY
 from modules.python.IntervalTree import IntervalTree
@@ -44,8 +46,7 @@ class View:
     """
     Process manager that runs sequence of processes to generate images and their labebls.
     """
-    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, summary_writer,
-                 confident_tree):
+    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, confident_tree):
         """
         Initialize a manager object
         :param chromosome_name: Name of the chromosome
@@ -60,7 +61,6 @@ class View:
         self.bam_path = bam_file_path
         self.fasta_path = reference_file_path
         self.vcf_path = vcf_path
-        self.summary_writer = summary_writer
         self.bam_handler = FRIDAY.BAM_handler(bam_file_path)
         self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
         self.train_mode = train_mode
@@ -85,27 +85,14 @@ class View:
 
         return intervals_chromosomal_reference
 
-    def get_labeled_candidate_sites(self, selected_candidate_list, start_pos, end_pos):
-        """
-        Lable selected candidates of a region and return a list of records
-        :param selected_candidate_list: List of all selected candidates with their alleles
-        :param start_pos: start position of the region
-        :param end_pos: end position of the region
-        :param filter_hom_ref: whether to ignore hom_ref VCF records during candidate validation
-        :return: labeled_sites: Labeled candidate sites. Each containing proper genotype.
-        """
-        # candidate_labler = CandidateLabeler(self.fasta_path, self.vcf_path)
-        candidate_labler = CandidateLabeler(self.vcf_path,
-                                            self.chromosome_name,
-                                            start_pos,
-                                            end_pos)
-        labeled_candidates = candidate_labler.get_labeled_candidates(selected_candidate_list)
-
-        return labeled_candidates
-
     @staticmethod
     def overlap_length_between_ranges(range_a, range_b):
         return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
+
+    @staticmethod
+    def a_fully_contains_range_b(range_a, range_b):
+        if range_b[0] >= range_a[0] and range_b[1] <= range_a[1]: return True
+        return False
 
     def parse_region(self, start_position, end_position):
         """
@@ -129,7 +116,9 @@ class View:
                                            self.chromosome_name,
                                            start_position,
                                            end_position)
-        candidates = candidate_finder.find_candidates(reads)
+        candidate_positions, candidate_map, reference_seq, ref_start, ref_end = candidate_finder.find_candidates(reads)
+
+        sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
 
         # # get all labeled candidate sites
         if self.train_mode:
@@ -137,27 +126,25 @@ class View:
             if not confident_intervals_in_region:
                 return 0, 0
 
-            confident_candidates = []
-            for candidate in candidates:
+            confident_windows = []
+            for window in sequence_windows:
                 for interval in confident_intervals_in_region:
-                    if self.overlap_length_between_ranges((candidate.pos, candidate.pos_end), interval) > 0:
-                        confident_candidates.append(candidate)
-                        break
+                    if self.a_fully_contains_range_b(interval, window):
+                        confident_windows.append(window)
 
-            if not confident_candidates:
+            if not confident_windows:
                 return 0, 0
 
-            # labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position, True)
-            labeled_sites = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position)
+            image_generator = ImageGenerator(self.vcf_path,
+                                             reference_seq,
+                                             self.chromosome_name,
+                                             ref_start,
+                                             ref_end,
+                                             candidate_map)
+            generated_images = image_generator.generate_labeled_images(confident_windows, reads)
+            return len(reads), len(confident_windows), generated_images, candidate_map
         else:
-            labeled_sites = candidates
-        #
-        # # if DEBUG_PRINT_CANDIDATES:
-        # #     for candidate in labeled_sites:
-        # #         print(candidate)
-        #
-        # # generate and save candidate images
-        ImageGenerator.generate_and_save_candidate_images(labeled_sites, self.summary_writer)
+            pass
 
         return len(reads), len(candidates)
         #
@@ -189,6 +176,7 @@ def chromosome_level_parallelization(chr_name,
                                      vcf_file,
                                      confident_intervals,
                                      output_path,
+                                     image_path,
                                      total_threads,
                                      thread_id,
                                      train_mode,
@@ -206,9 +194,10 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (288245, 288738)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    interval_start, interval_end = (288245, 289738)
     # interval_start, interval_end = (701150, 701170)
+    # interval_start, interval_end = (284250, 284450)
 
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
@@ -216,30 +205,50 @@ def chromosome_level_parallelization(chr_name,
 
     intervals = [r for i, r in enumerate(all_intervals) if i % total_threads == thread_id]
 
-    smry = None
-    if intervals:
-        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
-
     view = View(chromosome_name=chr_name,
                 bam_file_path=bam_file,
                 reference_file_path=ref_file,
                 vcf_path=vcf_file,
-                summary_writer=smry,
                 train_mode=train_mode,
                 confident_tree=confident_intervals)
 
+
+    smry = None
+    if intervals:
+        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+
     start_time = time.time()
     total_reads_processed = 0
-    total_candidates = 0
+    total_windows = 0
     for interval in intervals:
         _start, _end = interval
-        n_reads, n_candidates = view.parse_region(start_position=_start, end_position=_end)
-        total_reads_processed += n_reads
-        total_candidates += n_candidates
+        n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+        # save the dictionary
+        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+        with open(dictionary_file_path, 'wb') as f:
+            pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
-    print("TOTAL TIME ELAPSED: ", thread_id, time.time()-start_time,
-          'READS: ', total_reads_processed,
-          'CANDIDATES: ', total_candidates)
+        # save the images
+        for image in images:
+            # print(image[0], image[1].size(), image[2].size())
+            file_name = '_'.join(map(str, image[0]))
+            # zip_archive.write(file_name+"_image.ttf")
+            torch.save(image[1].data, image_path + file_name+".image")
+            if train_mode:
+                torch.save(image[2].data, image_path + file_name+".label")
+
+            # write in summary file
+            summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+                             ' '.join(map(str, image[0])) + "\n"
+            smry.write(summary_string)
+
+        total_reads_processed += n_reads
+        total_windows += n_windows
+
+    print("THREAD ID: ", thread_id,
+          "READS: ", total_reads_processed,
+          "WINDOWS: ", total_windows,
+          "TOTAL TIME ELAPSED: ", math.floor(time.time()-start_time)/60, "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
@@ -266,7 +275,7 @@ def summary_file_to_csv(output_dir_path, chr_list):
         os.rmdir(path_to_dir)
 
 
-def handle_output_directory(output_dir):
+def handle_output_directory(output_dir, thread_id):
     """
     Process the output directory and return a valid directory where we save the output
     :param output_dir: Output directory path
@@ -278,7 +287,13 @@ def handle_output_directory(output_dir):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    return output_dir
+    internal_directory = "images_" + str(thread_id) + "/"
+    image_dir = output_dir + internal_directory
+
+    if not os.path.exists(image_dir):
+        os.mkdir(image_dir)
+
+    return output_dir, image_dir
 
 
 def boolean_string(s):
@@ -360,6 +375,7 @@ if __name__ == '__main__':
     if FLAGS.train_mode and (not confident_intervals or not FLAGS.vcf):
         sys.stderr.write(TextColor.RED + "ERROR: TRAIN MODE REQUIRES --vcf AND --bed TO BE SET.\n" + TextColor.END)
         exit(1)
+    output_dir, image_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
     #
     # if confident_intervals is not None:
     #     sys.stderr.write(TextColor.PURPLE + "CONFIDENT TREE LOADED\n" + TextColor.END)
@@ -370,7 +386,8 @@ if __name__ == '__main__':
                                      FLAGS.fasta,
                                      FLAGS.vcf,
                                      confident_intervals,
-                                     FLAGS.output_dir,
+                                     output_dir,
+                                     image_dir,
                                      FLAGS.threads,
                                      FLAGS.thread_id,
                                      FLAGS.train_mode)

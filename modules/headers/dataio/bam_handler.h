@@ -103,6 +103,11 @@ struct type_read{
     vector <int> bad_indicies;
     int mapping_quality;
     vector <int> base_qualities;
+    int read_id;
+
+    void set_read_id(int id) {
+        this->read_id = id;
+    }
 
     void set_position(long long pos){
         this->pos = pos;

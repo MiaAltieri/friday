@@ -38,10 +38,23 @@ struct PositionalCandidateRecord{
     string alt2;
     int alt1_type;
     int alt2_type;
+
+
     bool labeled;
     int alt1_gt;
     int alt2_gt;
     vector<int> genotype {0, 0};
+
+    PositionalCandidateRecord(string chr_name, long long pos, long long pos_end, string ref, string alt1, string alt2,
+    int alt1_type, int alt2_type) {
+        this->chromosome_name = chr_name;
+        this->pos = pos;
+        this->pos_end = pos_end;
+        this->ref = ref;
+        this->alt1 = alt1;
+        this->alt1_type = alt1_type;
+        this->alt2_type = alt2_type;
+    }
 
     PositionalCandidateRecord() {
         this->alt1_type = 0;
@@ -216,7 +229,7 @@ public:
                     long long ref_start,
                     long long ref_end);
     void add_read_alleles(type_read &read, vector<int> &coverage);
-    vector<PositionalCandidateRecord>  find_candidates(vector<type_read> reads);
+    pair<set<long long>, map<long long, PositionalCandidateRecord>  >  find_candidates(vector<type_read> reads);
 };
 
 

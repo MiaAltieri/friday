@@ -14,39 +14,39 @@ class CandidateFinder:
         return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
 
     def find_candidates(self, reads):
-        # ref_start = self.region_start
-        # ref_end = self.region_end
-        # for read in reads:
-        #     ref_start = min(ref_start, read.pos)
-        #     ref_end = max(ref_end, read.pos_end)
-        # get the reference from the fasta file
+        ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
+        ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
         reference_sequence = self.fasta_handler.get_reference_sequence(self.contig,
-                                                                       self.region_start
-                                                                       - CandidateFinderOptions.SAFE_BASES,
-                                                                       self.region_end
-                                                                       + CandidateFinderOptions.SAFE_BASES)
-        # find the active region
+                                                                       ref_start,
+                                                                       ref_end)
+        # candidate finder objects
         candidate_finder = FRIDAY.CandidateFinder(reference_sequence,
                                                   self.contig,
                                                   self.region_start,
                                                   self.region_end,
-                                                  self.region_start
-                                                  - CandidateFinderOptions.SAFE_BASES,
-                                                  self.region_end
-                                                  + CandidateFinderOptions.SAFE_BASES)
+                                                  ref_start,
+                                                  ref_end)
 
-        # find active regions
-        candidates = candidate_finder.find_candidates(reads)
+        # find candidates
+        candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
-        # print("RAW CANDIDATES")
-        # for candidate in candidates:
-        #     candidate.print()
-        # print("--------------------")
-        # exit()
-        # candidates_in_region = []
-        # for candidate in candidates:
-        #     if(self.overlap_length_between_ranges((candidate.pos, candidate.pos_end),
-        #                                           (self.region_start, self.region_end))):
-        #         candidates_in_region.append(candidate)
+        return candidate_positions, candidate_map, reference_sequence, ref_start, ref_end
 
-        return candidates
+    @staticmethod
+    def get_windows_from_candidates(candidate_positions):
+        current_window_st, current_window_end = -1, -1
+        all_windows = []
+        for candidate_position in sorted(candidate_positions):
+            if current_window_st == -1:
+                current_window_st = candidate_position - CandidateFinderOptions.MIN_BASES_ON_LEFT
+                current_window_end = candidate_position + CandidateFinderOptions.BASES_ON_RIGHT
+                all_windows.append((current_window_st, current_window_end))
+            elif candidate_position <= current_window_end - CandidateFinderOptions.MIN_BASES_ON_LEFT:
+                continue
+            else:
+                current_window_st = candidate_position - CandidateFinderOptions.MIN_BASES_ON_LEFT
+                current_window_end = candidate_position + CandidateFinderOptions.BASES_ON_RIGHT
+                all_windows.append((current_window_st, current_window_end))
+
+        return all_windows
+

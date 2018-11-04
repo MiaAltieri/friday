@@ -9,4 +9,5 @@
 #include "local_reassembly/debruijn_graph.cpp"
 #include "local_reassembly/aligner.cpp"
 #include "candidate_finding/candidate_finder.cpp"
+#include "image_generator/image_generator.cpp"
 #include "../headers/pybind_api.h"
