@@ -277,6 +277,12 @@ class ImageGenerator:
                 print(len(left_empty), len(core_values), len(right_empty))
                 exit()
 
+            for pixel in read_segment_array:
+                if len(pixel) != 5:
+                    print('Window', window_start, window_end)
+                    print('Read', _st, _end, len(read_array), len(read_segment_array))
+                    exit(0)
+
             if len(whole_image) < image_height:
                 whole_image.append(read_segment_array)
 
