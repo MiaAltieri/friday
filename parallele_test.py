@@ -131,17 +131,17 @@ class View:
 
         # # get all labeled candidate sites
         if self.train_mode:
-            # confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
-            # if not confident_intervals_in_region:
-            #     return 0, 0, None, None
+            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            if not confident_intervals_in_region:
+                return 0, 0, None, None
 
-            # confident_windows = []
-            # for window in sequence_windows:
-            #     for interval in confident_intervals_in_region:
-            #         if self.a_fully_contains_range_b(interval, window):
-            #             confident_windows.append(window)
-            # for a dry run, let's not subset the windows
-            confident_windows = sequence_windows
+            confident_windows = []
+            for window in sequence_windows:
+                for interval in confident_intervals_in_region:
+                    if self.a_fully_contains_range_b(interval, window):
+                        confident_windows.append(window)
+            # for a dry run, do not subset the windows
+            # confident_windows = sequence_windows
 
             if not confident_windows:
                 return 0, 0, None, None
