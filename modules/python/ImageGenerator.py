@@ -260,7 +260,7 @@ class ImageGenerator:
             read_segment_array.extend(core_values)
             read_segment_array.extend(right_empty)
 
-            if len(read_segment_array) != 20:
+            if len(read_segment_array) != (window_end-window_start):
                 print('READ', _st, _end, len(read_array))
                 print('WINDOW', window_start, window_end)
                 print('REF', self.ref_start, self.ref_end)
