@@ -11,7 +11,7 @@ class CandidateFinderOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 14
     MIN_MAP_QUALITY = 15
-    SAFE_BASES = 200
+    SAFE_BASES = 50
 
     MIN_BASES_ON_LEFT = 5
     BASES_ON_RIGHT = 15

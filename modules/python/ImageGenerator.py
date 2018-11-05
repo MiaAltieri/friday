@@ -26,7 +26,6 @@ global_base_color = {'A': 250, 'C': 30, 'G': 180, 'T': 100, '.': 0, '*': 0, 'N':
 global_base_color_reverse = {250: 'A', 30: 'C', 180: 'G', 100: 'T', 0: ' ', 10: 'N'}
 
 
-
 class CIGAR_OPERATIONS(object):
     MATCH = 0
     IN = 1

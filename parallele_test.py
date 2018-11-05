@@ -18,6 +18,7 @@ from modules.python.TextColor import TextColor
 from modules.python.TsvHandler import TsvHandler
 from modules.python.FileManager import FileManager
 from modules.python.ImageGenerator import ImageGenerator
+from modules.python.PileupGenerator import PileupGenerator
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
 - Find candidates that can be variants
@@ -119,7 +120,7 @@ class View:
                                            self.chromosome_name,
                                            start_position,
                                            end_position)
-        candidate_positions, candidate_map, reference_seq, ref_start, ref_end = candidate_finder.find_candidates(reads)
+        candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
         if not candidate_positions:
             return len(reads), 0, None, None
@@ -128,6 +129,11 @@ class View:
 
         if not sequence_windows:
             return len(reads), 0, None, None
+
+        image_generator = PileupGenerator(self.fasta_handler,
+                                          self.chromosome_name,
+                                          start_position,
+                                          end_position)
 
         # # get all labeled candidate sites
         if self.train_mode:
@@ -146,25 +152,10 @@ class View:
             if not confident_windows:
                 return 0, 0, None, None
 
-            image_generator = ImageGenerator(self.vcf_path,
-                                             reference_seq,
-                                             self.chromosome_name,
-                                             ref_start,
-                                             ref_end,
-                                             candidate_map)
-            generated_images = image_generator.generate_labeled_images(confident_windows, reads)
+            generated_images = image_generator.generate_pileup(reads, confident_windows, candidate_map)
             return len(reads), len(confident_windows), generated_images, candidate_map
         else:
-            image_generator = ImageGenerator(self.vcf_path,
-                                             reference_seq,
-                                             self.chromosome_name,
-                                             ref_start,
-                                             ref_end,
-                                             candidate_map)
-            generated_images = image_generator.generate_unlabeled_images(sequence_windows, reads)
-
-            return len(reads), len(sequence_windows), generated_images, candidate_map
-
+            pass
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
     """
@@ -208,8 +199,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (350000, 450000)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    interval_start, interval_end = (350000, 450000)
     # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (284250, 284450)

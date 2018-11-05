@@ -21,7 +21,9 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
 
-
+        py::class_<ImageGenerator>(m, "ImageGenerator")
+            .def(py::init<const string &, const string &, long long &, long long&, map<long long, PositionalCandidateRecord> & >())
+            .def("read_to_image_row", &ImageGenerator::read_to_image_row);
 
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
@@ -57,10 +59,6 @@ PYBIND11_MODULE(FRIDAY, m) {
                         return p;
                     }
             ));
-
-        py::class_<ImageGenerator>(m, "ImageGenerator")
-            .def(py::init<>())
-            .def("generate_image", &ImageGenerator::generate_image);
 
 
         // Candidate finder
