@@ -128,10 +128,7 @@ class View:
 
         if not sequence_windows:
             return len(reads), 0, None, None
-        else:
-            return len(reads), len(sequence_windows), None, None
 
-        '''
         # # get all labeled candidate sites
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
@@ -158,9 +155,15 @@ class View:
             generated_images = image_generator.generate_labeled_images(confident_windows, reads)
             return len(reads), len(confident_windows), generated_images, candidate_map
         else:
-            pass
+            image_generator = ImageGenerator(self.vcf_path,
+                                             reference_seq,
+                                             self.chromosome_name,
+                                             ref_start,
+                                             ref_end,
+                                             candidate_map)
+            generated_images = image_generator.generate_unlabeled_images(sequence_windows, reads)
 
-        return len(reads), len(candidates)'''
+            return len(reads), len(sequence_windows), generated_images, candidate_map
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
@@ -224,10 +227,9 @@ def chromosome_level_parallelization(chr_name,
                 train_mode=train_mode,
                 confident_tree=confident_intervals)
 
-
-    # smry = None
-    # if intervals:
-    #     smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+    smry = None
+    if intervals:
+        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
 
     start_time = time.time()
     total_reads_processed = 0
@@ -238,26 +240,26 @@ def chromosome_level_parallelization(chr_name,
         total_reads_processed += n_reads
         total_windows += n_windows
 
-        # if not images or not candidate_map:
-        #     continue
-        # # save the dictionary
-        # dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
-        # with open(dictionary_file_path, 'wb') as f:
-        #     pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
-        #
-        # # save the images
-        # for image in images:
-        #     # print(image[0], image[1].size(), image[2].size())
-        #     file_name = '_'.join(map(str, image[0]))
-        #     # zip_archive.write(file_name+"_image.ttf")
-        #     torch.save(image[1].data, image_path + file_name+".image")
-        #     if train_mode:
-        #         torch.save(image[2].data, image_path + file_name+".label")
-        #
-        #     # write in summary file
-        #     summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
-        #                      ' '.join(map(str, image[0])) + "\n"
-        #     smry.write(summary_string)
+        if not images or not candidate_map:
+            continue
+        # save the dictionary
+        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+        with open(dictionary_file_path, 'wb') as f:
+            pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+
+        # save the images
+        for image in images:
+            # print(image[0], image[1].size(), image[2].size())
+            file_name = '_'.join(map(str, image[0]))
+            # zip_archive.write(file_name+"_image.ttf")
+            torch.save(image[1].data, image_path + file_name+".image")
+            if train_mode:
+                torch.save(image[2].data, image_path + file_name+".label")
+
+            # write in summary file
+            summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+                             ' '.join(map(str, image[0])) + "\n"
+            smry.write(summary_string)
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,

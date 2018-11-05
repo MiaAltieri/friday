@@ -426,3 +426,17 @@ class ImageGenerator:
             generated_image_info.append(((self.chromosome_name, window[0], window[1]), image_tensor, label_tensor))
 
         return generated_image_info
+
+    def generate_unlabeled_images(self, windows, reads):
+        _id = 1
+        for read in reads:
+            read.set_read_id(_id)
+            _id += 1
+
+        # need three things here -> window, image, label, candidate dictionary name
+        generated_image_info = []
+        for window in windows:
+            image_tensor = self.generate_image(window, reads)
+            generated_image_info.append(((self.chromosome_name, window[0], window[1]), image_tensor))
+
+        return generated_image_info
