@@ -2,7 +2,7 @@ from build import FRIDAY
 import numpy as np
 from modules.python.ActiveRegionFinder import ActiveRegionFinder, ActiveRegionOptions
 from modules.python.DeBruijnHaplotyper import DeBruijnHaplotyper
-from modules.python.Options import AlingerOptions, CandidateFinderOptions
+from modules.python.Options import AlingerOptions, CandidateFinderOptions, DeBruijnGraphOptions
 
 
 class RegionBasedHaplotypes:
@@ -75,21 +75,23 @@ class LocalAssembler:
                                                self.region_start_position,
                                                self.region_end_position,
                                                CandidateFinderOptions.MIN_MAP_QUALITY,
-                                               CandidateFinderOptions.MIN_BASE_QUALITY)
+                                               DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
         if len(all_reads) > AlingerOptions.MAX_READS_IN_REGION:
             # https://github.com/google/nucleus/blob/master/nucleus/util/utils.py
             # reservoir_sample method utilized here
             random = np.random.RandomState(AlingerOptions.RANDOM_SEED)
-            reduced_reads = []
             sample = []
             for i, read in enumerate(all_reads):
                 if len(sample) < AlingerOptions.MAX_READS_IN_REGION:
-                    reduced_reads.append(read)
+                    sample.append(read)
                 else:
                     j = random.randint(0, i + 1)
                     if j < AlingerOptions.MAX_READS_IN_REGION:
                         sample[j] = read
+
+            all_reads = sample
+
         if perform_alignment is False:
             return all_reads
 
@@ -110,13 +112,12 @@ class LocalAssembler:
             if end_pos - start_pos > ActiveRegionOptions.MAX_REGION_SIZE:
                 continue
 
-            db_graph = DeBruijnHaplotyper(self.bam_handler,
-                                          self.fasta_handler,
+            db_graph = DeBruijnHaplotyper(self.fasta_handler,
                                           self.chromosome_name,
                                           start_pos,
                                           end_pos)
 
-            reference_sequence, haplotypes = db_graph.find_haplotypes()
+            reference_sequence, haplotypes = db_graph.find_haplotypes(all_reads)
 
             # print(active_region)
             # for hap in set(haplotypes):
@@ -130,9 +131,7 @@ class LocalAssembler:
         # now we have the list that we filtered at the beginning of this script
         realigned_reads = list()
         for read in all_reads:
-            read_start = read.pos
-            read_end = read.pos_end
-            read_range = (read_start, read_end)
+            read_range = (read.pos, read.pos_end)
             overlapping_lengths = [RegionBasedHaplotypes.overlap_length_between_ranges(region, read_range)
                                    for region in possible_regions]
             max_length = max(overlapping_lengths)

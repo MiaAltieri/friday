@@ -16,6 +16,7 @@ using namespace std;
 namespace DeBruijnGraph_options {
     static constexpr int MIN_EDGE_SUPPORT = 2;
     static constexpr int MIN_BASE_QUALITY = 15;
+    static constexpr int MIN_MAP_QUALITY = 15;
     static constexpr int MAX_ALLOWED_PATHS = 256;
 };
 

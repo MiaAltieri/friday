@@ -5,8 +5,7 @@ from modules.python.Options import DeBruijnGraphOptions
 
 
 class DeBruijnHaplotyper:
-    def __init__(self, bam_handler, fasta_handler, contig, start, end):
-        self.bam_handler = bam_handler
+    def __init__(self, fasta_handler, contig, start, end):
         self.fasta_handler = fasta_handler
         self.contig = contig
         self.region_start = start
@@ -38,7 +37,7 @@ class DeBruijnHaplotyper:
         # print(self.dot.source)
         dot.render('outputs/'+output_filename+'.sv')
 
-    def find_haplotypes(self):
+    def find_haplotypes(self, reads):
         # get the reference from the fasta file
         reference_sequence = self.fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
         min_k, max_k = FRIDAY.DeBruijnGraph.find_min_k_from_ref(reference_sequence,
@@ -48,13 +47,6 @@ class DeBruijnHaplotyper:
         # couldn't build ref without cycle
         if min_k == -1:
             return None, None
-
-        # get the reads from the bam file
-        reads = self.bam_handler.get_reads(self.contig,
-                                           self.region_start,
-                                           self.region_end,
-                                           DeBruijnGraphOptions.MIN_MAP_QUALITY,
-                                           DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
         # print(reference_sequence)
         # min_k = 44
