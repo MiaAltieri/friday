@@ -114,6 +114,8 @@ class View:
 
         if not reads:
             return 0, 0, None, None
+        else:
+            return len(reads), 0, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -122,13 +124,16 @@ class View:
         candidate_positions, candidate_map, reference_seq, ref_start, ref_end = candidate_finder.find_candidates(reads)
 
         if not candidate_positions:
-            return 0, 0, None, None
+            return len(reads), 0, None, None
 
         sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
 
         if not sequence_windows:
-            return 0, 0, None, None
+            return len(reads), 0, None, None
+        else:
+            return len(reads), len(sequence_windows), None, None
 
+        '''
         # # get all labeled candidate sites
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
@@ -157,10 +162,7 @@ class View:
         else:
             pass
 
-        return len(reads), len(candidates)
-        #
-        # # end_time = time.time()
-        # print("ELAPSED ", thread_no, start_position, end_position, end_time - st_time)
+        return len(reads), len(candidates)'''
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
@@ -205,8 +207,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (350000, 351000)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    interval_start, interval_end = (350000, 351000)
     # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (284250, 284450)
@@ -225,9 +227,9 @@ def chromosome_level_parallelization(chr_name,
                 confident_tree=confident_intervals)
 
 
-    smry = None
-    if intervals:
-        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+    # smry = None
+    # if intervals:
+    #     smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
 
     start_time = time.time()
     total_reads_processed = 0
@@ -238,31 +240,31 @@ def chromosome_level_parallelization(chr_name,
         total_reads_processed += n_reads
         total_windows += n_windows
 
-        if not images or not candidate_map:
-            continue
-        # save the dictionary
-        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
-        with open(dictionary_file_path, 'wb') as f:
-            pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
-
-        # save the images
-        for image in images:
-            # print(image[0], image[1].size(), image[2].size())
-            file_name = '_'.join(map(str, image[0]))
-            # zip_archive.write(file_name+"_image.ttf")
-            torch.save(image[1].data, image_path + file_name+".image")
-            if train_mode:
-                torch.save(image[2].data, image_path + file_name+".label")
-
-            # write in summary file
-            summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
-                             ' '.join(map(str, image[0])) + "\n"
-            smry.write(summary_string)
+        # if not images or not candidate_map:
+        #     continue
+        # # save the dictionary
+        # dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+        # with open(dictionary_file_path, 'wb') as f:
+        #     pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+        #
+        # # save the images
+        # for image in images:
+        #     # print(image[0], image[1].size(), image[2].size())
+        #     file_name = '_'.join(map(str, image[0]))
+        #     # zip_archive.write(file_name+"_image.ttf")
+        #     torch.save(image[1].data, image_path + file_name+".image")
+        #     if train_mode:
+        #         torch.save(image[2].data, image_path + file_name+".label")
+        #
+        #     # write in summary file
+        #     summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+        #                      ' '.join(map(str, image[0])) + "\n"
+        #     smry.write(summary_string)
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,
           "WINDOWS: ", total_windows,
-          "TOTAL TIME ELAPSED: ", math.floor(time.time()-start_time)/60, "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
+          "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
