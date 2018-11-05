@@ -243,7 +243,7 @@ def chromosome_level_parallelization(chr_name,
         if not images or not candidate_map:
             continue
         # save the dictionary
-        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+        '''dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
         with open(dictionary_file_path, 'wb') as f:
             pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
@@ -259,7 +259,7 @@ def chromosome_level_parallelization(chr_name,
             # write in summary file
             summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
                              ' '.join(map(str, image[0])) + "\n"
-            smry.write(summary_string)
+            smry.write(summary_string)'''
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,
