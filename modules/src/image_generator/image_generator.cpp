@@ -215,7 +215,7 @@ void ImageGenerator::assign_read_to_window(PileupImage& pileup_image,
         left_empties = read_start - pileup_image.start_pos;
     }
 
-    if(read_end > pileup_image.end_pos) {
+    if(read_end >= pileup_image.end_pos) {
         // read goes beyond the window
         read_end_index = pileup_image.end_pos - read_start;
     } else if(read_end < pileup_image.end_pos) {

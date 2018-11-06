@@ -204,7 +204,7 @@ def chromosome_level_parallelization(chr_name,
     # interval_start, interval_end = (350000, 450000)
     # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
-    # interval_start, interval_end = (294000, 294999)
+    # interval_start, interval_end = (260000, 260999)
 
     all_intervals = []
     for pos in range(interval_start, interval_end, max_size):
@@ -246,6 +246,7 @@ def chromosome_level_parallelization(chr_name,
 
             # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
             # for row in image.image:
+            #     print(image.start_pos, image.end_pos)
             #     assert len(row) == 20, "ROW LENGTH ERROR"
             #     for pixel in row:
             #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"

@@ -36,7 +36,7 @@ class PileupGenerator:
                                                 positional_candidates)
         pileup_images = image_generator.create_window_pileups(windows, reads)
         # print("GOT READS")
-
+        #
         # for pileup_image in pileup_images:
         #     print(pileup_image.chromosome_name, pileup_image.start_pos, pileup_image.end_pos)
         #     for image_row in pileup_image.image:
