@@ -40,8 +40,9 @@ class PileupGenerator:
         # for pileup_image in pileup_images:
         #     print(pileup_image.chromosome_name, pileup_image.start_pos, pileup_image.end_pos)
         #     for image_row in pileup_image.image:
-        #         self.decode_image_row(image_row.row)
-
+        #         self.decode_image_row(image_row)
+        #
+        # exit()
         return pileup_images
         # exit(0)
         # for read in reads:

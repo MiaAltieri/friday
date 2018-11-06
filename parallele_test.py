@@ -7,6 +7,7 @@ import zipfile
 from torchvision.utils import save_image
 import torch
 import pickle
+import numpy as np
 
 from build import FRIDAY
 from modules.python.IntervalTree import IntervalTree
@@ -234,23 +235,31 @@ def chromosome_level_parallelization(chr_name,
         if not images or not candidate_map:
             continue
         # save the dictionary
-        '''dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
         with open(dictionary_file_path, 'wb') as f:
             pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
         # save the images
         for image in images:
-            # print(image[0], image[1].size(), image[2].size())
-            file_name = '_'.join(map(str, image[0]))
+            file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
+            file_name = '_'.join(map(str, file_name_str))
+
+            # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
+            # for row in image.image:
+            #     assert len(row) == 20, "ROW LENGTH ERROR"
+            #     for pixel in row:
+            #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
+            np_array_image = np.array(image.image, dtype=np.uint8)
+            np_array_image = np_array_image.transpose(2, 1, 0)
             # zip_archive.write(file_name+"_image.ttf")
-            torch.save(image[1].data, image_path + file_name+".image")
-            if train_mode:
-                torch.save(image[2].data, image_path + file_name+".label")
+            torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
+            # if train_mode:
+            #     torch.save(image[2].data, image_path + file_name+".label")
 
             # write in summary file
             summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
-                             ' '.join(map(str, image[0])) + "\n"
-            smry.write(summary_string)'''
+                             ' '.join(map(str, file_name_str)) + "\n"
+            smry.write(summary_string)
 
     print("THREAD ID: ", thread_id,
           "READS: ", total_reads_processed,

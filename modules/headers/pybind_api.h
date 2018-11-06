@@ -20,11 +20,6 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
-
-        py::class_<ImageRow>(m, "ImageRow")
-            .def(py::init<>())
-            .def_readwrite("row", &ImageRow::row);
-
         py::class_<PileupImage>(m, "PileupImage")
             .def(py::init<>())
             .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
