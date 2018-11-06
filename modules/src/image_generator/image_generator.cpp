@@ -309,7 +309,6 @@ vector<uint8_t> ImageGenerator::get_window_labels(pair<long long, long long> win
                 }
             }
         }
-        cout<<gt1<<" "<<gt2<<endl;
         window_label.push_back(get_image_label(gt1, gt2));
     }
 
