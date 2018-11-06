@@ -8,6 +8,7 @@
 #include <algorithm>
 using namespace std;
 #include "../dataio/bam_handler.h"
+#include "../candidate_finding/candidate_finder.h"
 
 namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
@@ -47,7 +48,11 @@ public:
     string get_reference_sequence(long long st_pos, long long end_pos);
     vector<vector<uint8_t> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
     vector<vector<uint8_t> > get_reference_row(string ref_seq);
-    vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows, vector<type_read> reads);
+    vector<uint8_t> get_window_labels(pair<long long, long long> window,
+                                      map<long long, vector<type_positional_vcf_record> > pos_vcf);
+    vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
+                                              vector<type_read> reads);
+    int get_which_allele(long long pos, string ref, string alt, int alt_type);
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);
     void assign_read_to_window(PileupImage& pileup_image,

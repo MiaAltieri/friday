@@ -14,8 +14,8 @@ class CandidateFinder:
         return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
 
     def find_candidates(self, reads):
-        ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
-        ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
+        ref_start = max(0, self.region_start - (CandidateFinderOptions.SAFE_BASES * 2))
+        ref_end = self.region_end + (CandidateFinderOptions.SAFE_BASES * 2)
 
         reference_sequence = self.fasta_handler.get_reference_sequence(self.contig,
                                                                        ref_start,
@@ -23,15 +23,20 @@ class CandidateFinder:
         # candidate finder objects
         candidate_finder = FRIDAY.CandidateFinder(reference_sequence,
                                                   self.contig,
-                                                  self.region_start,
-                                                  self.region_end,
+                                                  max(0, self.region_start - CandidateFinderOptions.SAFE_BASES),
+                                                  self.region_end + CandidateFinderOptions.SAFE_BASES,
                                                   ref_start,
                                                   ref_end)
 
         # find candidates
         candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
-        return candidate_positions, candidate_map
+        filtered_positions = []
+        for candidate_position in candidate_positions:
+            if self.region_start <= candidate_position <= self.region_end:
+                filtered_positions.append(candidate_position)
+
+        return filtered_positions, candidate_map
 
     @staticmethod
     def get_windows_from_candidates(candidate_positions):

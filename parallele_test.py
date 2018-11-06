@@ -115,7 +115,7 @@ class View:
         reads = local_assembler.perform_local_assembly()
 
         if not reads:
-            return 0, 0, None, None
+            return 0, 0, None, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -124,12 +124,12 @@ class View:
         candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
         if not candidate_positions:
-            return len(reads), 0, None, None
+            return len(reads), 0, None, None, None
 
         sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
 
         if not sequence_windows:
-            return len(reads), 0, None, None
+            return len(reads), 0, None, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
                                           self.chromosome_name,
@@ -140,7 +140,7 @@ class View:
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                return 0, 0, None, None
+                return 0, 0, None, None, None
 
             confident_windows = []
             for window in sequence_windows:
@@ -151,10 +151,10 @@ class View:
             # confident_windows = sequence_windows
 
             if not confident_windows:
-                return 0, 0, None, None
+                return 0, 0, None, None, None
 
-            pileup_images = image_generator.generate_pileup(reads, confident_windows, candidate_map)
-            return len(reads), len(confident_windows), pileup_images, candidate_map
+            pileup_images, labels = image_generator.generate_pileup(reads, confident_windows, candidate_map, self.vcf_path)
+            return len(reads), len(confident_windows), pileup_images, labels, candidate_map
         else:
             pass
 
@@ -200,8 +200,8 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (350000, 450000)
+    # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+    interval_start, interval_end = (266000, 266094)
     # interval_start, interval_end = (269856, 269996)
     # interval_start, interval_end = (701150, 701170)
     # interval_start, interval_end = (260000, 260999)
@@ -228,7 +228,7 @@ def chromosome_level_parallelization(chr_name,
     total_windows = 0
     for interval in intervals:
         _start, _end = interval
-        n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+        n_reads, n_windows, images, labels, candidate_map = view.parse_region(start_position=_start, end_position=_end)
         total_reads_processed += n_reads
         total_windows += n_windows
 
@@ -240,7 +240,7 @@ def chromosome_level_parallelization(chr_name,
             pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
         # save the images
-        for image in images:
+        for i, image in enumerate(images):
             file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
             file_name = '_'.join(map(str, file_name_str))
 
@@ -254,8 +254,9 @@ def chromosome_level_parallelization(chr_name,
             np_array_image = np_array_image.transpose(2, 1, 0)
             # zip_archive.write(file_name+"_image.ttf")
             torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
-            # if train_mode:
-            #     torch.save(image[2].data, image_path + file_name+".label")
+            if train_mode:
+                np_array_image = np.array(labels[i], dtype=np.uint8)
+                torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
             # write in summary file
             summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
