@@ -13,6 +13,25 @@ namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
     static constexpr int BASE_QUALITY_CAP = 40;
     static constexpr int MAP_QUALITY_CAP = 60;
+    static constexpr int REF_ROW_BAND = 5;
+    static constexpr int IMAGE_HEIGHT = 100;
+};
+
+
+struct ImageRow {
+    vector<vector<uint8_t> > row;
+};
+struct PileupImage {
+    string chromosome_name;
+    long long start_pos;
+    long long end_pos;
+    vector<ImageRow>image;
+
+    void set_values(string chromosome_name, long long start_pos, long long end_pos) {
+        this->chromosome_name = chromosome_name;
+        this->start_pos = start_pos;
+        this->end_pos = end_pos;
+    }
 };
 
 class ImageGenerator {
@@ -28,7 +47,17 @@ public:
                    long long ref_start,
                    long long ref_end,
                    map<long long, PositionalCandidateRecord> all_positional_candidates);
-    pair<vector< vector<uint8_t> >, pair<long long, long long> > read_to_image_row(type_read read);
+
+    string get_reference_sequence(long long st_pos, long long end_pos);
+    ImageRow read_to_image_row(type_read read, long long &read_start, long long &read_end);
+    ImageRow get_reference_row(string ref_seq);
+    vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows, vector<type_read> reads);
+    long long overlap_length_between_ranges(pair<long long, long long> range_a,
+                                            pair<long long, long long> range_b);
+    void assign_read_to_window(PileupImage& pileup_image,
+                               ImageRow& image_row,
+                               long long read_start,
+                               long long read_end);
 };
 
 

@@ -152,8 +152,8 @@ class View:
             if not confident_windows:
                 return 0, 0, None, None
 
-            generated_images = image_generator.generate_pileup(reads, confident_windows, candidate_map)
-            return len(reads), len(confident_windows), generated_images, candidate_map
+            pileup_images = image_generator.generate_pileup(reads, confident_windows, candidate_map)
+            return len(reads), len(confident_windows), pileup_images, candidate_map
         else:
             pass
 

@@ -21,14 +21,25 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
 
+        py::class_<ImageRow>(m, "ImageRow")
+            .def(py::init<>())
+            .def_readwrite("row", &ImageRow::row);
+
+        py::class_<PileupImage>(m, "PileupImage")
+            .def(py::init<>())
+            .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
+            .def_readwrite("start_pos", &PileupImage::start_pos)
+            .def_readwrite("end_pos", &PileupImage::end_pos)
+            .def_readwrite("image", &PileupImage::image);
+
         py::class_<ImageGenerator>(m, "ImageGenerator")
             .def(py::init<const string &, const string &, long long &, long long&, map<long long, PositionalCandidateRecord> & >())
-            .def("read_to_image_row", &ImageGenerator::read_to_image_row);
+            .def("create_window_pileups", &ImageGenerator::create_window_pileups);
 
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
             .def(py::init<const string &, long long &, long long&, const string &,
-        const string &, const string &, const int &, const int &>())
+                 const string &, const string &, const int &, const int &>())
             .def("print", &PositionalCandidateRecord::print)
             .def("set_genotype", &PositionalCandidateRecord::set_genotype)
             .def("get_candidate_record", &PositionalCandidateRecord::get_candidate_record)
