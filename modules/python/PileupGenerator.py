@@ -22,32 +22,27 @@ class PileupGenerator:
         print()
 
     def generate_pileup(self, reads, windows, positional_candidates):
-        # find out which read goes to what window. Reads that do not overlap with any window will not be processed
-        read_window_map = defaultdict(list)
-        for read_id in range(len(reads)):
-            reads[read_id].set_read_id(read_id)
-            for window_id in range(len(windows)):
-                if self.overlap_length_between_ranges((reads[read_id].pos, reads[read_id].pos_end),
-                                                      windows[window_id]):
-                    read_window_map[read_id].append(window_id)
-
         ref_start = max(0, windows[0][0] - CandidateFinderOptions.SAFE_BASES)
         ref_end = windows[-1][1] + CandidateFinderOptions.SAFE_BASES
         reference_sequence = self.fasta_handler.get_reference_sequence(self.chromosome_name,
                                                                        ref_start,
                                                                        ref_end)
+
         # image generator object
         image_generator = FRIDAY.ImageGenerator(reference_sequence,
                                                 self.chromosome_name,
                                                 ref_start,
                                                 ref_end,
                                                 positional_candidates)
-        return image_generator.create_window_pileups(windows, reads)
+        pileup_images = image_generator.create_window_pileups(windows, reads)
+        # print("GOT READS")
 
         # for pileup_image in pileup_images:
         #     print(pileup_image.chromosome_name, pileup_image.start_pos, pileup_image.end_pos)
         #     for image_row in pileup_image.image:
         #         self.decode_image_row(image_row.row)
+
+        return pileup_images
         # exit(0)
         # for read in reads:
         #     if read.read_id not in read_window_map:

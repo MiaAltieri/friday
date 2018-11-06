@@ -153,14 +153,21 @@ ImageRow ImageGenerator::read_to_image_row(type_read read, long long &read_start
                     string alt = ref + reference_sequence.substr(ref_position - ref_start , cigar.length);
                     Candidate candidate_alt(ref_position - 1, ref_position - 1 + cigar.length, ref, alt,
                                             AlleleType::DELETE_ALLELE);
-
                     base_color = global_base_color['.'];
 
                     if(!image_row.row.empty()) {
                         image_row.row.pop_back();
                     }
+                    if (read_start == -1) {
+                        read_start = ref_position - 1;
+                        read_end = ref_position - 1;
+                    }
+                    for(int i= -1; i<cigar.length; i++) {
+                        read_start = min(read_start, ref_position + i);
+                        read_end = max(read_end, ref_position + i);
 
-                    image_row.row.push_back({ base_color, 0, 0, strand_color});
+                        image_row.row.push_back({base_color, 0, 0, strand_color});
+                    }
 
 //                    cout<<"DEL: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<endl;
                 }
@@ -230,7 +237,6 @@ void ImageGenerator::assign_read_to_window(PileupImage& pileup_image,
 vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long, long long> > windows, vector<type_read> reads) {
     // container for all the images we will generate
     vector<PileupImage> pileup_images(windows.size());
-
     int inferred_window_size = windows[0].second - windows[0].first;
 
     // initialize all the pileup images with reference sequence
@@ -239,7 +245,6 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
         string ref_seq = get_reference_sequence(windows[i].first, windows[i].second);
         pileup_images[i].image.insert(pileup_images[i].image.end(), PileupPixels::REF_ROW_BAND, get_reference_row(ref_seq));
     }
-
     // now iterate through each of the reads and add it to different windows if read overlaps
     for(int i=0; i<reads.size(); i++) {
         reads[i].set_read_id(i);
@@ -255,13 +260,11 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
         // convert the read to a pileup row
         ImageRow image_row = read_to_image_row(reads[i], read_start, read_end);
         for(auto&index: windows_indices) {
-
             if(read_end < windows[index].first || read_start > windows[index].second) continue;
             // assign the read to each of the window it overlaps with
             assign_read_to_window(pileup_images[index], image_row, read_start, read_end);
         }
     }
-
     ImageRow empty_row;
     empty_row.row.insert(empty_row.row.end(), inferred_window_size, {0, 0, 0, 0});
     for(auto&pileup: pileup_images) {
@@ -270,7 +273,5 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
             pileup.image.insert(pileup.image.end(), empties_needed, empty_row);
         }
     }
-
     return pileup_images;
-
 }
