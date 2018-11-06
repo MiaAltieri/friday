@@ -129,24 +129,25 @@ class PileupGenerator:
                                                 self.chromosome_name,
                                                 ref_start,
                                                 ref_end,
-                                                positional_candidates)
+                                                positional_candidates,
+                                                positional_vcf)
         pileup_images = image_generator.create_window_pileups(windows, reads)
 
-        labels = []
-        for window in windows:
-            labels.append(self.get_window_label(window, positional_candidates, positional_vcf))
+        # labels = []
+        # for window in windows:
+        #     labels.append(self.get_window_label(window, positional_candidates, positional_vcf))
         # print("GOT READS")
         #
         # for i, pileup_image in enumerate(pileup_images):
         #     print(pileup_image.chromosome_name, pileup_image.start_pos, pileup_image.end_pos)
-        #     for label in labels[i]:
+        #     for label in pileup_image.label:
         #         print(label, end='')
         #     print()
         #     for image_row in pileup_image.image:
         #         self.decode_image_row(image_row)
         #
         # exit()
-        return pileup_images, labels
+        return pileup_images
         # exit(0)
         # for read in reads:
         #     if read.read_id not in read_window_map:

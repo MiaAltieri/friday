@@ -25,10 +25,12 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
             .def_readwrite("start_pos", &PileupImage::start_pos)
             .def_readwrite("end_pos", &PileupImage::end_pos)
-            .def_readwrite("image", &PileupImage::image);
+            .def_readwrite("image", &PileupImage::image)
+            .def_readwrite("label", &PileupImage::label);
 
         py::class_<ImageGenerator>(m, "ImageGenerator")
-            .def(py::init<const string &, const string &, long long &, long long&, map<long long, PositionalCandidateRecord> & >())
+            .def(py::init<const string &, const string &, long long &, long long&,
+        map<long long, PositionalCandidateRecord> &, map<long long, vector<type_positional_vcf_record> > & >())
             .def("create_window_pileups", &ImageGenerator::create_window_pileups);
 
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")

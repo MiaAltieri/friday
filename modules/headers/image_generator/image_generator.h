@@ -18,12 +18,19 @@ namespace PileupPixels {
     static constexpr int IMAGE_HEIGHT = 100;
 };
 
+
+namespace Genotypes {
+    static constexpr int HOM = 0;
+    static constexpr int HET = 1;
+    static constexpr int HOM_ALT = 2;
+};
+
 struct PileupImage {
     string chromosome_name;
     long long start_pos;
     long long end_pos;
     vector<vector<vector<uint8_t> > >image;
-
+    vector<uint8_t> label;
     void set_values(string chromosome_name, long long start_pos, long long end_pos) {
         this->chromosome_name = chromosome_name;
         this->start_pos = start_pos;
@@ -38,18 +45,20 @@ class ImageGenerator {
     string reference_sequence;
     map<long long, PositionalCandidateRecord> all_positional_candidates;
     map<char, uint8_t> global_base_color;
+    map<long long, vector<type_positional_vcf_record> > pos_vcf;
 public:
     ImageGenerator(string reference_sequence,
                    string chromosome_name,
                    long long ref_start,
                    long long ref_end,
-                   map<long long, PositionalCandidateRecord> all_positional_candidates);
+                   map<long long, PositionalCandidateRecord> all_positional_candidates,
+                   map<long long, vector<type_positional_vcf_record> > pos_vcf);
 
     string get_reference_sequence(long long st_pos, long long end_pos);
     vector<vector<uint8_t> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
     vector<vector<uint8_t> > get_reference_row(string ref_seq);
-    vector<uint8_t> get_window_labels(pair<long long, long long> window,
-                                      map<long long, vector<type_positional_vcf_record> > pos_vcf);
+    uint8_t get_image_label(int gt1, int gt2);
+    vector<uint8_t> get_window_labels(pair<long long, long long> window);
     vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
                                               vector<type_read> reads);
     int get_which_allele(long long pos, string ref, string alt, int alt_type);

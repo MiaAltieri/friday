@@ -115,7 +115,7 @@ class View:
         reads = local_assembler.perform_local_assembly()
 
         if not reads:
-            return 0, 0, None, None, None
+            return 0, 0, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -124,12 +124,12 @@ class View:
         candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
         if not candidate_positions:
-            return len(reads), 0, None, None, None
+            return len(reads), 0, None, None
 
         sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
 
         if not sequence_windows:
-            return len(reads), 0, None, None, None
+            return len(reads), 0, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
                                           self.chromosome_name,
@@ -140,7 +140,7 @@ class View:
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                return 0, 0, None, None, None
+                return 0, 0, None, None
 
             confident_windows = []
             for window in sequence_windows:
@@ -151,10 +151,10 @@ class View:
             # confident_windows = sequence_windows
 
             if not confident_windows:
-                return 0, 0, None, None, None
+                return 0, 0, None, None
 
-            pileup_images, labels = image_generator.generate_pileup(reads, confident_windows, candidate_map, self.vcf_path)
-            return len(reads), len(confident_windows), pileup_images, labels, candidate_map
+            pileup_images = image_generator.generate_pileup(reads, confident_windows, candidate_map, self.vcf_path)
+            return len(reads), len(confident_windows), pileup_images, candidate_map
         else:
             pass
 
@@ -228,7 +228,7 @@ def chromosome_level_parallelization(chr_name,
     total_windows = 0
     for interval in intervals:
         _start, _end = interval
-        n_reads, n_windows, images, labels, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+        n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
         total_reads_processed += n_reads
         total_windows += n_windows
 
@@ -255,7 +255,7 @@ def chromosome_level_parallelization(chr_name,
             # zip_archive.write(file_name+"_image.ttf")
             torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
             if train_mode:
-                np_array_image = np.array(labels[i], dtype=np.uint8)
+                np_array_image = np.array(image.label, dtype=np.uint8)
                 torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
             # write in summary file

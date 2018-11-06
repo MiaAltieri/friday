@@ -8,12 +8,14 @@ ImageGenerator::ImageGenerator(string reference_sequence,
                                string chromosome_name,
                                long long ref_start,
                                long long ref_end,
-                               map<long long, PositionalCandidateRecord> all_positional_candidates) {
+                               map<long long, PositionalCandidateRecord> all_positional_candidates,
+                               map<long long, vector<type_positional_vcf_record> > pos_vcf) {
     this->reference_sequence = reference_sequence;
     this->chromosome_name = chromosome_name;
     this->ref_start = ref_start;
     this->ref_end = ref_end;
     this->all_positional_candidates = all_positional_candidates;
+    this->pos_vcf = pos_vcf;
     this->global_base_color = {{'A', 250}, {'C', 30}, {'G', 180}, {'T', 100}, {'.', 0}, {'*', 0}, {'N', 10}};
 }
 
@@ -261,10 +263,65 @@ void ImageGenerator::assign_read_to_window(PileupImage& pileup_image,
 }
 
 
+uint8_t ImageGenerator::get_image_label(int gt1, int gt2) {
+    if(gt1 == Genotype::HOM && gt2 == Genotype::HOM) return 0;
+    if(gt1 == Genotype::HET && gt2 == Genotype::HOM) return 1;
+    if(gt1 == Genotype::HOM_ALT && gt2 == Genotype::HOM) return 2;
+    if(gt1 == Genotype::HOM && gt2 == Genotype::HET) return 3;
+    if(gt2 == Genotype::HOM_ALT && gt1 == Genotype::HOM) return 4;
+    if(gt1 == Genotype::HET && gt2 == Genotype::HET) return 5;
+
+    return 0;
+}
+
+vector<uint8_t> ImageGenerator::get_window_labels(pair<long long, long long> window) {
+
+    vector<uint8_t> window_label;
+    for(long long pos = window.first; pos < window.second; pos++) {
+        if(all_positional_candidates.find(pos) == all_positional_candidates.end()) {
+            window_label.push_back(0);
+            continue;
+        }
+
+        PositionalCandidateRecord candidate = all_positional_candidates[pos];
+
+        int gt1 = Genotype::HOM, gt2 = Genotype::HOM;
+        for(auto &vcf_rec:pos_vcf[pos]) {
+            for(auto &alt: vcf_rec.alt_allele) {
+                if(alt.ref.compare(candidate.ref) == 0
+                   && alt.alt_allele.compare(candidate.alt1) == 0
+                   && alt.alt_type == candidate.alt1_type) {
+                    if(vcf_rec.genotype[0] == 1 && vcf_rec.genotype[1] == 1) {
+                        gt1 = Genotype::HOM_ALT;
+                    }else if(vcf_rec.genotype[0] == 1 || vcf_rec.genotype[1] == 1) {
+                        gt1 = Genotype::HET;
+                    }
+                }
+
+                if(alt.ref.compare(candidate.ref) == 0
+                   && alt.alt_allele.compare(candidate.alt2) == 0
+                   && alt.alt_type == candidate.alt2_type) {
+                    if(vcf_rec.genotype[0] == 2 && vcf_rec.genotype[1] == 2) {
+                        gt2 = Genotype::HOM_ALT;
+                    }else if(vcf_rec.genotype[0] == 2 || vcf_rec.genotype[1] == 2) {
+                        gt2 = Genotype::HET;
+                    }
+                }
+            }
+        }
+        cout<<gt1<<" "<<gt2<<endl;
+        window_label.push_back(get_image_label(gt1, gt2));
+    }
+
+    return window_label;
+}
+
+
 vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long, long long> > windows,
                                                           vector<type_read> reads) {
     // container for all the images we will generate
     vector<PileupImage> pileup_images(windows.size());
+    vector<vector<uint8_t> > labels(windows.size());
     int inferred_window_size = windows[0].second - windows[0].first;
 
     // initialize all the pileup images with reference sequence
@@ -272,7 +329,10 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
         pileup_images[i].set_values(this->chromosome_name, windows[i].first, windows[i].second);
         string ref_seq = get_reference_sequence(windows[i].first, windows[i].second);
         pileup_images[i].image.insert(pileup_images[i].image.end(), PileupPixels::REF_ROW_BAND, get_reference_row(ref_seq));
+
+        pileup_images[i].label = get_window_labels(windows[i]);
     }
+
     // now iterate through each of the reads and add it to different windows if read overlaps
     for(int i=0; i<reads.size(); i++) {
         reads[i].set_read_id(i);
