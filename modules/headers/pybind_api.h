@@ -30,8 +30,9 @@ PYBIND11_MODULE(FRIDAY, m) {
 
         py::class_<ImageGenerator>(m, "ImageGenerator")
             .def(py::init<const string &, const string &, long long &, long long&,
-        map<long long, PositionalCandidateRecord> &, map<long long, vector<type_positional_vcf_record> > & >())
-            .def("create_window_pileups", &ImageGenerator::create_window_pileups);
+        map<long long, PositionalCandidateRecord> & >())
+            .def("create_window_pileups", &ImageGenerator::create_window_pileups)
+            .def("set_positional_vcf", &ImageGenerator::set_positional_vcf);
 
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())

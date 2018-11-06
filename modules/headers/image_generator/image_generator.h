@@ -51,8 +51,8 @@ public:
                    string chromosome_name,
                    long long ref_start,
                    long long ref_end,
-                   map<long long, PositionalCandidateRecord> all_positional_candidates,
-                   map<long long, vector<type_positional_vcf_record> > pos_vcf);
+                   map<long long, PositionalCandidateRecord> all_positional_candidates);
+    void set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf);
 
     string get_reference_sequence(long long st_pos, long long end_pos);
     vector<vector<uint8_t> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
@@ -60,7 +60,8 @@ public:
     uint8_t get_image_label(int gt1, int gt2);
     vector<uint8_t> get_window_labels(pair<long long, long long> window);
     vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
-                                              vector<type_read> reads);
+                                              vector<type_read> reads,
+                                              bool train_mode);
     int get_which_allele(long long pos, string ref, string alt, int alt_type);
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);

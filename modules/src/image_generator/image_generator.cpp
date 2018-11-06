@@ -8,15 +8,17 @@ ImageGenerator::ImageGenerator(string reference_sequence,
                                string chromosome_name,
                                long long ref_start,
                                long long ref_end,
-                               map<long long, PositionalCandidateRecord> all_positional_candidates,
-                               map<long long, vector<type_positional_vcf_record> > pos_vcf) {
+                               map<long long, PositionalCandidateRecord> all_positional_candidates) {
     this->reference_sequence = reference_sequence;
     this->chromosome_name = chromosome_name;
     this->ref_start = ref_start;
     this->ref_end = ref_end;
     this->all_positional_candidates = all_positional_candidates;
-    this->pos_vcf = pos_vcf;
     this->global_base_color = {{'A', 250}, {'C', 30}, {'G', 180}, {'T', 100}, {'.', 0}, {'*', 0}, {'N', 10}};
+}
+
+void ImageGenerator::set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf) {
+    this->pos_vcf = pos_vcf;
 }
 
 int ImageGenerator::get_which_allele(long long pos, string ref, string alt, int alt_type) {
@@ -317,10 +319,9 @@ vector<uint8_t> ImageGenerator::get_window_labels(pair<long long, long long> win
 
 
 vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long, long long> > windows,
-                                                          vector<type_read> reads) {
+                                                          vector<type_read> reads, bool train_mode) {
     // container for all the images we will generate
     vector<PileupImage> pileup_images(windows.size());
-    vector<vector<uint8_t> > labels(windows.size());
     int inferred_window_size = windows[0].second - windows[0].first;
 
     // initialize all the pileup images with reference sequence
@@ -328,8 +329,9 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
         pileup_images[i].set_values(this->chromosome_name, windows[i].first, windows[i].second);
         string ref_seq = get_reference_sequence(windows[i].first, windows[i].second);
         pileup_images[i].image.insert(pileup_images[i].image.end(), PileupPixels::REF_ROW_BAND, get_reference_row(ref_seq));
-
-        pileup_images[i].label = get_window_labels(windows[i]);
+        if(train_mode) {
+            pileup_images[i].label = get_window_labels(windows[i]);
+        }
     }
 
     // now iterate through each of the reads and add it to different windows if read overlaps

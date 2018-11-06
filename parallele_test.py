@@ -3,8 +3,6 @@ import math
 import time
 import os
 import sys
-import zipfile
-from torchvision.utils import save_image
 import torch
 import pickle
 import numpy as np
@@ -13,12 +11,9 @@ from build import FRIDAY
 from modules.python.IntervalTree import IntervalTree
 from modules.python.LocalRealignment import LocalAssembler
 from modules.python.CandidateFinder import CandidateFinder
-# from modules.python.CandidateLabler import CandidateLabeler
-from modules.python.CandidateLablerPositional import CandidateLabeler
 from modules.python.TextColor import TextColor
 from modules.python.TsvHandler import TsvHandler
 from modules.python.FileManager import FileManager
-from modules.python.ImageGenerator import ImageGenerator
 from modules.python.PileupGenerator import PileupGenerator
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
@@ -33,8 +28,8 @@ Input:
 - BED file: A confident bed file. If confident_bed is passed it will only generate train set for those region.
 
 Output:
-- H5PY files: Containing images and their label of the genome.
-- CSV file: Containing records of images and their location in the H5PY file.
+- TENSOR files: Containing images and their labels.
+- CSV file: Containing records of images and their location in the tensor file.
 """
 
 # Global debug helpers
@@ -55,7 +50,6 @@ class View:
         :param bam_file_path: Path to the BAM file
         :param reference_file_path: Path to the reference FASTA file
         :param vcf_path: Path to the VCF file
-        :param output_file_path: Path to the output directory where images are saved
         :param confident_tree: Dictionary containing all confident trees. NULL if parameter not passed.
         """
         # --- initialize handlers ---
@@ -67,7 +61,7 @@ class View:
         self.fasta_handler = FRIDAY.FASTA_handler(reference_file_path)
         self.train_mode = train_mode
         self.confident_tree = confident_tree[chromosome_name] if confident_tree else None
-        self.interval_tree = IntervalTree(self.confident_tree)
+        self.interval_tree = IntervalTree(self.confident_tree) if confident_tree else None
 
         # --- initialize names ---
         # name of the chromosome
@@ -101,7 +95,6 @@ class View:
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
         :param end_position: End position of the region
-        :param thread_no: Thread no for this region
         :return:
         """
         # st_time = time.time()
@@ -138,25 +131,36 @@ class View:
 
         # # get all labeled candidate sites
         if self.train_mode:
-            # confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
-            # if not confident_intervals_in_region:
-            #     return 0, 0, None, None
-            #
-            # confident_windows = []
-            # for window in sequence_windows:
-            #     for interval in confident_intervals_in_region:
-            #         if self.a_fully_contains_range_b(interval, window):
-            #             confident_windows.append(window)
+            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            if not confident_intervals_in_region:
+                return 0, 0, None, None
+
+            confident_windows = []
+            for window in sequence_windows:
+                for interval in confident_intervals_in_region:
+                    if self.a_fully_contains_range_b(interval, window):
+                        confident_windows.append(window)
             # for a dry run, do not subset the windows
-            confident_windows = sequence_windows
+            # confident_windows = sequence_windows
 
             if not confident_windows:
                 return 0, 0, None, None
 
-            pileup_images = image_generator.generate_pileup(reads, confident_windows, candidate_map, self.vcf_path)
+            pileup_images = image_generator.generate_pileup(reads,
+                                                            confident_windows,
+                                                            candidate_map,
+                                                            self.vcf_path,
+                                                            train_mode=True)
+
             return len(reads), len(confident_windows), pileup_images, candidate_map
         else:
-            pass
+            pileup_images = image_generator.generate_pileup(reads,
+                                                            sequence_windows,
+                                                            candidate_map,
+                                                            self.vcf_path,
+                                                            train_mode=False)
+            return len(reads), len(sequence_windows), pileup_images, candidate_map
+
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
     """
@@ -394,11 +398,7 @@ if __name__ == '__main__':
         sys.stderr.write(TextColor.RED + "ERROR: TRAIN MODE REQUIRES --vcf AND --bed TO BE SET.\n" + TextColor.END)
         exit(1)
     output_dir, image_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
-    #
-    # if confident_intervals is not None:
-    #     sys.stderr.write(TextColor.PURPLE + "CONFIDENT TREE LOADED\n" + TextColor.END)
-    # else:
-    #     sys.stderr.write(TextColor.RED + "CONFIDENT BED IS NULL\n" + TextColor.END)
+
     chromosome_level_parallelization(FLAGS.chromosome_name,
                                      FLAGS.bam,
                                      FLAGS.fasta,

@@ -114,24 +114,25 @@ class PileupGenerator:
 
         return window_label
 
-    def generate_pileup(self, reads, windows, positional_candidates, vcf_path):
+    def generate_pileup(self, reads, windows, positional_candidates, vcf_path, train_mode):
         ref_start = max(0, windows[0][0] - CandidateFinderOptions.SAFE_BASES)
         ref_end = windows[-1][1] + CandidateFinderOptions.SAFE_BASES
         reference_sequence = self.fasta_handler.get_reference_sequence(self.chromosome_name,
                                                                        ref_start,
                                                                        ref_end)
 
-        vcf_handler = FRIDAY.VCF_handler(vcf_path)
-        positional_vcf = vcf_handler.get_positional_vcf_records(self.chromosome_name, ref_start - 20, ref_end + 20)
-
         # image generator object
         image_generator = FRIDAY.ImageGenerator(reference_sequence,
                                                 self.chromosome_name,
                                                 ref_start,
                                                 ref_end,
-                                                positional_candidates,
-                                                positional_vcf)
-        pileup_images = image_generator.create_window_pileups(windows, reads)
+                                                positional_candidates)
+        if train_mode:
+            vcf_handler = FRIDAY.VCF_handler(vcf_path)
+            positional_vcf = vcf_handler.get_positional_vcf_records(self.chromosome_name, ref_start - 20, ref_end + 20)
+            image_generator.set_positional_vcf(positional_vcf)
+
+        pileup_images = image_generator.create_window_pileups(windows, reads, train_mode)
 
         # labels = []
         # for window in windows:
@@ -148,10 +149,3 @@ class PileupGenerator:
         #
         # exit()
         return pileup_images
-        # exit(0)
-        # for read in reads:
-        #     if read.read_id not in read_window_map:
-        #         continue
-        #     img_row, read_pos = image_generator.read_to_image_row(read)
-            # print(read_pos, img_row)
-
