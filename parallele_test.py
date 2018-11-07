@@ -180,7 +180,7 @@ def create_output_dir_for_chromosome(output_dir, chr_name):
     return path_to_dir
 
 
-def chromosome_level_parallelization(chr_name,
+def chromosome_level_parallelization(chr_list,
                                      bam_file,
                                      ref_file,
                                      vcf_file,
@@ -193,7 +193,7 @@ def chromosome_level_parallelization(chr_name,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
-    :param chr_name: Name of the chromosome
+    :param chr_list: List of chromosomes to be processed
     :param bam_file: path to BAM file
     :param ref_file: path to reference FASTA file
     :param vcf_file: path to VCF file
@@ -204,73 +204,75 @@ def chromosome_level_parallelization(chr_name,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-    # interval_start, interval_end = (266000, 266094)
-    # interval_start, interval_end = (269856, 269996)
-    # interval_start, interval_end = (701150, 701170)
-    # interval_start, interval_end = (260000, 260999)
+    for chr_name in chr_list:
+        interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+        # interval_start, interval_end = (266000, 266094)
+        # interval_start, interval_end = (269856, 269996)
+        # interval_start, interval_end = (701150, 701170)
+        # interval_start, interval_end = (260000, 260999)
 
-    all_intervals = []
-    for pos in range(interval_start, interval_end, max_size):
-        all_intervals.append((pos, min(interval_end, pos + max_size - 1)))
+        all_intervals = []
+        for pos in range(interval_start, interval_end, max_size):
+            all_intervals.append((pos, min(interval_end, pos + max_size - 1)))
 
-    intervals = [r for i, r in enumerate(all_intervals) if i % total_threads == thread_id]
+        intervals = [r for i, r in enumerate(all_intervals) if i % total_threads == thread_id]
 
-    view = View(chromosome_name=chr_name,
-                bam_file_path=bam_file,
-                reference_file_path=ref_file,
-                vcf_path=vcf_file,
-                train_mode=train_mode,
-                confident_tree=confident_intervals)
+        view = View(chromosome_name=chr_name,
+                    bam_file_path=bam_file,
+                    reference_file_path=ref_file,
+                    vcf_path=vcf_file,
+                    train_mode=train_mode,
+                    confident_tree=confident_intervals)
 
-    smry = None
-    if intervals:
-        smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+        smry = None
+        if intervals:
+            smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
 
-    start_time = time.time()
-    total_reads_processed = 0
-    total_windows = 0
-    for interval in intervals:
-        _start, _end = interval
-        n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
-        total_reads_processed += n_reads
-        total_windows += n_windows
+        start_time = time.time()
+        total_reads_processed = 0
+        total_windows = 0
+        for interval in intervals:
+            _start, _end = interval
+            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+            total_reads_processed += n_reads
+            total_windows += n_windows
 
-        if not images or not candidate_map:
-            continue
-        # save the dictionary
-        dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
-        with open(dictionary_file_path, 'wb') as f:
-            pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+            if not images or not candidate_map:
+                continue
+            # save the dictionary
+            dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+            with open(dictionary_file_path, 'wb') as f:
+                pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
-        # save the images
-        for i, image in enumerate(images):
-            file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
-            file_name = '_'.join(map(str, file_name_str))
+            # save the images
+            for i, image in enumerate(images):
+                file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
+                file_name = '_'.join(map(str, file_name_str))
 
-            # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
-            # for row in image.image:
-            #     print(image.start_pos, image.end_pos)
-            #     assert len(row) == 20, "ROW LENGTH ERROR"
-            #     for pixel in row:
-            #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
-            np_array_image = np.array(image.image, dtype=np.uint8)
-            np_array_image = np_array_image.transpose(2, 1, 0)
-            # zip_archive.write(file_name+"_image.ttf")
-            torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
-            if train_mode:
-                np_array_image = np.array(image.label, dtype=np.uint8)
-                torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
+                # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
+                # for row in image.image:
+                #     print(image.start_pos, image.end_pos)
+                #     assert len(row) == 20, "ROW LENGTH ERROR"
+                #     for pixel in row:
+                #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
+                np_array_image = np.array(image.image, dtype=np.uint8)
+                np_array_image = np_array_image.transpose(2, 1, 0)
+                # zip_archive.write(file_name+"_image.ttf")
+                torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
+                if train_mode:
+                    np_array_image = np.array(image.label, dtype=np.uint8)
+                    torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
-            # write in summary file
-            summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
-                             ' '.join(map(str, file_name_str)) + "\n"
-            smry.write(summary_string)
+                # write in summary file
+                summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+                                 ' '.join(map(str, file_name_str)) + "\n"
+                smry.write(summary_string)
 
-    print("THREAD ID: ", thread_id,
-          "READS: ", total_reads_processed,
-          "WINDOWS: ", total_windows,
-          "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
+        print("CHROMOSOME: ", chr_name,
+              "THREAD ID: ", thread_id,
+              "READS: ", total_reads_processed,
+              "WINDOWS: ", total_windows,
+              "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
@@ -327,6 +329,35 @@ def boolean_string(s):
     if s.lower() not in {'false', 'true'}:
         raise ValueError('Not a valid boolean string')
     return s.lower() == 'true'
+
+
+def get_chromosme_list(chromosome_names):
+    split_names = chromosome_names.strip().split(',')
+    split_names = [name.strip() for name in split_names]
+
+    chromosome_name_list = []
+    for name in split_names:
+        range_split = name.split('-')
+        if len(range_split) > 1:
+            chr_prefix = ''
+            for p in name:
+                if p.isdigit():
+                    break
+                else:
+                    chr_prefix = chr_prefix + p
+
+            int_ranges = []
+            for item in range_split:
+                s = ''.join(i for i in item if i.isdigit())
+                int_ranges.append(int(s))
+            int_ranges = sorted(int_ranges)
+
+            for chr_seq in range(int_ranges[0], int_ranges[-1] + 1):
+                chromosome_name_list.append(chr_prefix + str(chr_seq))
+        else:
+            chromosome_name_list.append(name)
+
+    return chromosome_name_list
 
 
 if __name__ == '__main__':
@@ -388,6 +419,7 @@ if __name__ == '__main__':
         help="Reference corresponding to the BAM file."
     )
     FLAGS, unparsed = parser.parse_known_args()
+    chr_list = get_chromosme_list(FLAGS.chromosome_name)
     # if the confident bed is not empty then create the tree
     if FLAGS.bed:
         confident_intervals = View.build_chromosomal_interval_trees(FLAGS.bed)
@@ -399,7 +431,7 @@ if __name__ == '__main__':
         exit(1)
     output_dir, image_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
 
-    chromosome_level_parallelization(FLAGS.chromosome_name,
+    chromosome_level_parallelization(chr_list,
                                      FLAGS.bam,
                                      FLAGS.fasta,
                                      FLAGS.vcf,
