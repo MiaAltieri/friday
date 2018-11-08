@@ -103,7 +103,9 @@ def predict(test_file, batch_size, num_workers):
                     predicted_label = top_i[0].item()
                     if predicted_label != 0:
                         if current_genomic_position == 2009997:
+                            print()
                             print(current_genomic_position, allele_dict_path, predicted_label, allele_dict_path)
+                            print(labels)
                         reference_dict[current_genomic_position] = allele_dict_path
                         prediction_dict[current_genomic_position].append((predicted_label, fake_probs))
 
@@ -114,7 +116,7 @@ def predict(test_file, batch_size, num_workers):
                     # prediction_dict[current_genomic_position].append((predicted_label, preds))
 
                     unrolling_genomic_position[batch] += 1
-
+    exit()
     return chromosome_name
 
 
