@@ -20,16 +20,15 @@ class SequenceDataset(Dataset):
         self.transform = transform
 
         self.file_info = list(data_frame[0])
-        self.index = list(data_frame[1])
-        self.dict_info = list(data_frame[2])
-        self.record = list(data_frame[3])
+        self.dict_info = list(data_frame[1])
+        self.record = list(data_frame[2])
 
     def __getitem__(self, index):
         # load the image
-        label_file_path = self.file_info[index] + ".labels"
+        label_file_path = self.file_info[index] + ".label"
         # load the labels
         label = torch.load(label_file_path)
-        label = label.type(torch.LongTensor)[int(self.index[index])]
+        label = label.type(torch.LongTensor)
 
         dict_path = self.dict_info[index]
         record = self.record[index]

@@ -204,7 +204,6 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    program_start_time = time.time()
     for chr_name in chr_list:
         interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
         # interval_start, interval_end = (266000, 266094)
@@ -226,18 +225,12 @@ def chromosome_level_parallelization(chr_list,
                     confident_tree=confident_intervals)
 
         smry = None
-        image_file_name = image_path + chr_name + "_" + str(thread_id)
         if intervals:
-            smry = open(output_path + chr_name + "_" + str(thread_id) + ".csv", 'w')
+            smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
 
         start_time = time.time()
         total_reads_processed = 0
         total_windows = 0
-
-        all_images = []
-        all_labels = []
-        summary_string = ''
-
         for interval in intervals:
             _start, _end = interval
             n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
@@ -254,37 +247,32 @@ def chromosome_level_parallelization(chr_list,
             # save the images
             for i, image in enumerate(images):
                 file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
+                file_name = '_'.join(map(str, file_name_str))
 
+                # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
+                # for row in image.image:
+                #     print(image.start_pos, image.end_pos)
+                #     assert len(row) == 20, "ROW LENGTH ERROR"
+                #     for pixel in row:
+                #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
                 np_array_image = np.array(image.image, dtype=np.uint8)
                 np_array_image = np_array_image.transpose(2, 1, 0)
-
-                all_images.append(torch.from_numpy(np_array_image))
+                # zip_archive.write(file_name+"_image.ttf")
+                torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
                 if train_mode:
-                    all_labels.append(torch.from_numpy(np.array(image.label, dtype=np.uint8)))
-
-                # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
-                # if train_mode:
-                #     np_array_image = np.array(image.label, dtype=np.uint8)
-                #     torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
+                    np_array_image = np.array(image.label, dtype=np.uint8)
+                    torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
                 # write in summary file
-                summary_string += image_file_name + "," + str(i) + "," + dictionary_file_path + "," + \
-                                  ' '.join(map(str, file_name_str)) + "\n"
-
-        if all_images:
-            torch.save(torch.stack(all_images), image_file_name + ".tff")
-            if train_mode:
-                torch.save(torch.stack(all_labels), image_file_name + ".labels")
-            smry.write(summary_string)
+                summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+                                 ' '.join(map(str, file_name_str)) + "\n"
+                smry.write(summary_string)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
               "READS: ", total_reads_processed,
               "WINDOWS: ", total_windows,
               "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
-
-    sys.stderr.write(TextColor.BLUE + "PROGRAM TIME: " + str(int(math.floor(time.time()-program_start_time)/60)) +
-                     " MINS " + str(math.ceil(time.time()-program_start_time) % 60) + " SEC\n")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
