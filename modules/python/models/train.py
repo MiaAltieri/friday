@@ -76,7 +76,10 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
             exit(1)
         sys.stderr.write(TextColor.GREEN + "INFO: RETRAIN MODEL LOADING\n" + TextColor.END)
         encoder_model, decoder_model, hidden_size, gru_layers, prev_ite = \
-            ModelHandler.load_model_for_training(retrain_model_path, input_channels=10, seq_len=seq_len, num_classes=6)
+            ModelHandler.load_model_for_training(retrain_model_path,
+                                                 input_channels=5,
+                                                 seq_len=ImageSizeOptions.SEQ_LENGTH,
+                                                 num_classes=6)
 
         if train_mode is True:
             epoch_limit = prev_ite + epoch_limit
@@ -90,9 +93,11 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
                                                                   num_classes=6)
         prev_ite = 0
 
-    encoder_optimizer = torch.optim.Adam(encoder_model.parameters(), lr=encoder_lr,
+    encoder_optimizer = torch.optim.Adam(encoder_model.parameters(),
+                                         lr=encoder_lr,
                                          weight_decay=encoder_decay)
-    decoder_optimizer = torch.optim.Adam(decoder_model.parameters(), lr=decoder_lr,
+    decoder_optimizer = torch.optim.Adam(decoder_model.parameters(),
+                                         lr=decoder_lr,
                                          weight_decay=decoder_decay)
 
     if retrain_model is True:

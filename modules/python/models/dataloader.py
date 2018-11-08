@@ -35,7 +35,6 @@ class SequenceDataset(Dataset):
         label_file_path = self.file_info[index] + ".label"
 
         image = torch.load(image_file_path)
-        image = image.transpose(1, 2)
         # load the labels
         label = torch.load(label_file_path)
 
