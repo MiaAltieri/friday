@@ -14,7 +14,7 @@ namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
     static constexpr int BASE_QUALITY_CAP = 40;
     static constexpr int MAP_QUALITY_CAP = 60;
-    static constexpr int REF_ROW_BAND = 5;
+    static constexpr int REF_ROW_BAND = 1;
     static constexpr int IMAGE_HEIGHT = 100;
 };
 
@@ -29,8 +29,8 @@ struct PileupImage {
     string chromosome_name;
     long long start_pos;
     long long end_pos;
-    vector<vector<vector<uint8_t> > >image;
-    vector<uint8_t> label;
+    vector<vector<vector<int> > >image;
+    vector<int> label;
     void set_values(string chromosome_name, long long start_pos, long long end_pos) {
         this->chromosome_name = chromosome_name;
         this->start_pos = start_pos;
@@ -44,7 +44,7 @@ class ImageGenerator {
     string chromosome_name;
     string reference_sequence;
     map<long long, PositionalCandidateRecord> all_positional_candidates;
-    map<char, uint8_t> global_base_color;
+    map<char, int> global_base_color;
     map<long long, vector<type_positional_vcf_record> > pos_vcf;
 public:
     ImageGenerator(string reference_sequence,
@@ -55,10 +55,10 @@ public:
     void set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf);
 
     string get_reference_sequence(long long st_pos, long long end_pos);
-    vector<vector<uint8_t> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
-    vector<vector<uint8_t> > get_reference_row(string ref_seq);
-    uint8_t get_image_label(int gt1, int gt2);
-    vector<uint8_t> get_window_labels(pair<long long, long long> window);
+    vector<vector<int> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
+    vector<vector<int> > get_reference_row(string ref_seq);
+    int get_image_label(int gt1, int gt2);
+    vector<int> get_window_labels(pair<long long, long long> window);
     vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
                                               vector<type_read> reads,
                                               bool train_mode);
@@ -66,7 +66,7 @@ public:
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);
     void assign_read_to_window(PileupImage& pileup_image,
-                               vector<vector<uint8_t> >& image_row,
+                               vector<vector<int> >& image_row,
                                long long read_start,
                                long long read_end);
 };
