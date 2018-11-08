@@ -135,7 +135,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
         batch_no = 1
         with tqdm(total=len(train_loader), desc='Loss', leave=True, ncols=100) as progress_bar:
             for images, labels in train_loader:
-                print(images.size(), labels.size())
+                # print(images.size(), labels.size())
 
                 # from modules.python.helper.tensor_analyzer import analyze_tensor
                 # for label in labels[0].data:
