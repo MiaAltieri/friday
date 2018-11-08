@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 import h5py
 import torch
 import pickle
@@ -17,10 +18,11 @@ class SequenceDataset(Dataset):
         data_frame = pd.read_csv(csv_path, header=None, dtype=str)
         # assert data_frame[0].apply(lambda x: os.path.isfile(x.split(' ')[0])).all(), \
         #     "Some images referenced in the CSV file were not found"
-        self.transform = transform
+        self.transform = transforms.Compose([transforms.ToTensor()])
         self.file_info = list(data_frame[0])
-        self.dict_info = list(data_frame[1])
-        self.record = list(data_frame[2])
+        self.file_index = list(data_frame[1])
+        self.dict_info = list(data_frame[2])
+        self.record = list(data_frame[3])
 
     @staticmethod
     def load_dictionary(dictionary_location):
@@ -31,15 +33,18 @@ class SequenceDataset(Dataset):
 
     def __getitem__(self, index):
         # load the image
-        image_file_path = self.file_info[index] + ".image"
-        label_file_path = self.file_info[index] + ".label"
+        hdf5_image = self.file_info[index]
+        hdf5_index = int(self.file_index[index])
+        hdf5_file = h5py.File(hdf5_image, 'r')
 
-        image = torch.load(image_file_path)
-        # load the labels
-        label = torch.load(label_file_path)
+        image_dataset = hdf5_file['images']
+        image = np.array(image_dataset[hdf5_index], dtype=np.uint8)
+        image = self.transform(image)
+        image = image.transpose(1, 2)
 
-        image = image.type(torch.FloatTensor)
-        label = label.type(torch.LongTensor)
+        label_dataset = hdf5_file['labels']
+        label = np.array(label_dataset[hdf5_index], dtype=np.long)
+        label = torch.from_numpy(label).type(torch.LongTensor)
 
         return image, label
 

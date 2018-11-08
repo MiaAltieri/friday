@@ -20,18 +20,21 @@ class SequenceDataset(Dataset):
         self.transform = transform
 
         self.file_info = list(data_frame[0])
-        self.dict_info = list(data_frame[1])
-        self.record = list(data_frame[2])
+        self.file_index = list(data_frame[1])
+        self.dict_info = list(data_frame[2])
+        self.record = list(data_frame[3])
 
     def __getitem__(self, index):
-        # load the image
-        label_file_path = self.file_info[index] + ".label"
-        # load the labels
-        label = torch.load(label_file_path)
-        label = label.type(torch.LongTensor)
-
         dict_path = self.dict_info[index]
         record = self.record[index]
+
+        hdf5_image = self.file_info[index]
+        hdf5_index = int(self.file_index[index])
+        hdf5_file = h5py.File(hdf5_image, 'r')
+
+        label_dataset = hdf5_file['labels']
+        label = np.array(label_dataset[hdf5_index], dtype=np.long)
+        label = torch.from_numpy(label).type(torch.LongTensor)
 
         return label, record, dict_path
 
