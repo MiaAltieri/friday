@@ -102,6 +102,8 @@ def predict(test_file, batch_size, num_workers):
                     top_n, top_i = torch.FloatTensor(fake_probs).topk(1)
                     predicted_label = top_i[0].item()
                     if predicted_label != 0:
+                        if current_genomic_position == 2009997:
+                            print(current_genomic_position, allele_dict_path, predicted_label, allele_dict_path)
                         reference_dict[current_genomic_position] = allele_dict_path
                         prediction_dict[current_genomic_position].append((predicted_label, fake_probs))
 
