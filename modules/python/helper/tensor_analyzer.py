@@ -1,6 +1,8 @@
 import math
 import argparse
 import torch
+import numpy as np
+
 
 def get_strand_color(is_rev):
     """
@@ -8,7 +10,7 @@ def get_strand_color(is_rev):
     :param is_rev: True if read is reversed
     :return:
     """
-    is_rev = is_rev.item()
+    is_rev = int(math.ceil(is_rev))
     if is_rev == 254:
         return 'R'
     if is_rev == 240:
@@ -25,9 +27,11 @@ def get_alt_type(alt_type_color):
     :param is_rev: True if read is reversed
     :return:
     """
-    alt_type_color = alt_type_color.item()
+    alt_type_color = int(math.ceil(alt_type_color))
     if alt_type_color == 0:
         return ' '
+    elif alt_type_color == 5:
+        return '0'
     elif alt_type_color == 240:
         return '1'
     elif alt_type_color == 125:
@@ -37,7 +41,7 @@ def get_alt_type(alt_type_color):
 
 
 def get_base_from_color(base_color):
-    color = base_color.item()
+    color = int(math.ceil(base_color))
     global_base_color_reverse = {250: 'A', 30: 'C', 180: 'G', 100: 'T', 5: 'N', 10: '.', 20: '*'}
     if color in global_base_color_reverse:
         return global_base_color_reverse[color]
@@ -52,7 +56,7 @@ def get_quality_by_color(quality):
     :param map_quality: value of mapping quality
     :return:
     """
-    quality = quality.item()
+    quality = int(math.ceil(quality))
     color = math.floor(((quality / 254) * 9))
     if color == 0:
         return ' '
@@ -62,6 +66,7 @@ def get_quality_by_color(quality):
 def analyze_tensor(image):
     # base_color, base_quality_color, map_qual_color, strand_color, alt_color
     img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
     img_h = 50
     # label_c = label.size(0)
     # print()

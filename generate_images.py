@@ -3,7 +3,6 @@ import math
 import time
 import os
 import sys
-import torch
 import pickle
 import h5py
 import numpy as np
@@ -16,6 +15,7 @@ from modules.python.TextColor import TextColor
 from modules.python.TsvHandler import TsvHandler
 from modules.python.FileManager import FileManager
 from modules.python.PileupGenerator import PileupGenerator
+from modules.python.Options import ImageSizeOptions
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
 - Find candidates that can be variants
@@ -268,9 +268,11 @@ def chromosome_level_parallelization(chr_list,
 
         hdf5_file = h5py.File(image_file_name, mode='w')
         # the image dataset we save. The index name in h5py is "images".
-        img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (100, 20, 5), np.uint8,
+        img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+                                                                            ImageSizeOptions.SEQ_LENGTH,
+                                                                            ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
                                             compression='gzip')
-        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (20,), np.uint8)
+        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.SEQ_LENGTH,), np.uint8)
         # save the images and labels to the h5py file
         img_dset[...] = all_images
         label_dataset[...] = all_labels

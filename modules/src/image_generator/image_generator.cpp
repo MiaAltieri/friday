@@ -98,7 +98,7 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         string ref(1, reference_sequence[reference_index]);
                         string alt(1, read.sequence[read_index]);
                         int which_allele = get_which_allele(ref_position, ref, alt, AlleleType::SNP_ALLELE);
-                        alt_color = 0;
+                        alt_color = 5;
                         if(which_allele != 0)
                             alt_color = which_allele == 1 ? 240 : 125;
 //                        cout<<"SNP: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<which_allele<<" "<<int(alt_color)<<endl;
@@ -116,7 +116,7 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                                            / (double)PileupPixels::BASE_QUALITY_CAP);
 
                         base_color = global_base_color[read.sequence[read_index]];
-                        alt_color = 0;
+                        alt_color = 5;
                         image_row.push_back({ base_color, base_qual_color, map_qual_color, strand_color, alt_color});
                     }
                     read_index += 1;
@@ -154,7 +154,7 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                     }
 
                     int which_allele = get_which_allele(ref_position - 1, ref, alt, AlleleType::INSERT_ALLELE);
-                    alt_color = 0;
+                    alt_color = 5;
                     if(which_allele != 0)
                         alt_color = which_allele == 1 ? 240 : 125;
 
@@ -187,17 +187,21 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         read_end = ref_position - 1;
                     }
                     int which_allele = get_which_allele(ref_position - 1, ref, alt, AlleleType::DELETE_ALLELE);
-                    alt_color = 0;
+                    alt_color = 5;
                     if(which_allele != 0)
                         alt_color = which_allele == 1 ? 240 : 125;
+
+                    base_qual_color = (double)PileupPixels::MAX_COLOR_VALUE *
+                                      ((double)min(20, PileupPixels::BASE_QUALITY_CAP)
+                                       / (double)PileupPixels::BASE_QUALITY_CAP);
 
                     for(int i= -1; i<cigar.length; i++) {
                         read_start = min(read_start, ref_position + i);
                         read_end = max(read_end, ref_position + i);
                         if(i==-1) {
-                            image_row.push_back({base_color, 0, 0, strand_color, alt_color});
+                            image_row.push_back({base_color, base_qual_color, map_qual_color, strand_color, alt_color});
                         }else {
-                            image_row.push_back({base_color, 0, 0, strand_color, 0});
+                            image_row.push_back({base_color, base_qual_color, map_qual_color, strand_color, 5});
                         }
                     }
 

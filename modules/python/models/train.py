@@ -135,8 +135,13 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
         batch_no = 1
         with tqdm(total=len(train_loader), desc='Loss', leave=True, ncols=100) as progress_bar:
             for images, labels in train_loader:
+                print(images.size(), labels.size())
+
                 # from modules.python.helper.tensor_analyzer import analyze_tensor
-                # analyze_tensor(images[0], labels[0])
+                # for label in labels[0].data:
+                #     print(label.item(), end='')
+                # print()
+                # analyze_tensor(images[0])
                 # exit()
                 if gpu_mode:
                     # encoder_hidden = encoder_hidden.cuda()

@@ -13,12 +13,13 @@ class CandidateFinderOptions(object):
     MIN_MAP_QUALITY = 15
     SAFE_BASES = 50
 
-    MIN_BASES_ON_LEFT = 5
-    BASES_ON_RIGHT = 15
-
 
 class ImageSizeOptions(object):
-    SEQ_LENGTH = 20
+    SEQ_LENGTH = 5
+    IMAGE_HEIGHT = 100
+    IMAGE_CHANNELS = 5
+    MIN_BASES_ON_LEFT = 2
+    BASES_ON_RIGHT = 3
 
 
 class AlingerOptions(object):
