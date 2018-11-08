@@ -207,7 +207,7 @@ def chromosome_level_parallelization(chr_list,
 
     for chr_name in chr_list:
         interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-        # interval_start, interval_end = (266000, 266094)
+        # interval_start, interval_end = (2005000, 2010000)
         # interval_start, interval_end = (269856, 269996)
         # interval_start, interval_end = (1413980, 1413995)
         # interval_start, interval_end = (260000, 260999)
@@ -235,6 +235,7 @@ def chromosome_level_parallelization(chr_list,
         total_windows = 0
         all_images = []
         all_labels = []
+        global_index = 0
         for interval in intervals:
             _start, _end = interval
             n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
@@ -260,9 +261,10 @@ def chromosome_level_parallelization(chr_list,
                     # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
                 # write in summary file
-                summary_string = image_file_name + "," + str(i) + "," + dictionary_file_path + "," + \
+                summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
                                  ' '.join(map(str, record)) + "\n"
                 smry.write(summary_string)
+                global_index += 1
 
         hdf5_file = h5py.File(image_file_name, mode='w')
         # the image dataset we save. The index name in h5py is "images".
@@ -272,6 +274,7 @@ def chromosome_level_parallelization(chr_list,
         # save the images and labels to the h5py file
         img_dset[...] = all_images
         label_dataset[...] = all_labels
+        hdf5_file.close()
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
