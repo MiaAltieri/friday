@@ -228,7 +228,7 @@ def chromosome_level_parallelization(chr_list,
         smry = None
         image_file_name = image_path + '_' + chr_name + "_" + str(thread_id) + ".h5py"
         if intervals:
-            smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
+            smry = open(output_path + chr_name + "_" + str(thread_id) + "_summary.csv", 'w')
 
         start_time = time.time()
         total_reads_processed = 0
@@ -244,25 +244,14 @@ def chromosome_level_parallelization(chr_list,
             if not images or not candidate_map:
                 continue
             # save the dictionary
-            dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + ".pkl"
+            dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + "_" + str(thread_id) \
+                                   + ".pkl"
             with open(dictionary_file_path, 'wb') as f:
                 pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
 
             # save the images
             for i, image in enumerate(images):
-                file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
-                # file_name = '_'.join(map(str, file_name_str))
-
-                # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
-                # for row in image.image:
-                #     print(image.start_pos, image.end_pos)
-                #     assert len(row) == 20, "ROW LENGTH ERROR"
-                #     for pixel in row:
-                #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
-                # np_array_image = np.array(image.image, dtype=np.uint8)
-                # np_array_image = np_array_image.transpose(2, 1, 0)
-                # zip_archive.write(file_name+"_image.ttf")
-                # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
+                record = (image.chromosome_name, image.start_pos, image.end_pos)
 
                 all_images.append(image.image)
                 if train_mode:
@@ -272,7 +261,7 @@ def chromosome_level_parallelization(chr_list,
 
                 # write in summary file
                 summary_string = image_file_name + "," + str(i) + "," + dictionary_file_path + "," + \
-                                 ' '.join(map(str, file_name_str)) + "\n"
+                                 ' '.join(map(str, record)) + "\n"
                 smry.write(summary_string)
 
         hdf5_file = h5py.File(image_file_name, mode='w')
