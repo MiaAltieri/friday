@@ -5,6 +5,7 @@ import os
 import sys
 import torch
 import pickle
+import h5py
 import numpy as np
 
 from build import FRIDAY
@@ -208,7 +209,7 @@ def chromosome_level_parallelization(chr_list,
         interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
         # interval_start, interval_end = (266000, 266094)
         # interval_start, interval_end = (269856, 269996)
-        # interval_start, interval_end = (701150, 701170)
+        # interval_start, interval_end = (1413980, 1413995)
         # interval_start, interval_end = (260000, 260999)
 
         all_intervals = []
@@ -225,12 +226,15 @@ def chromosome_level_parallelization(chr_list,
                     confident_tree=confident_intervals)
 
         smry = None
+        image_file_name = image_path + '_' + chr_name + "_" + str(thread_id) + ".h5py"
         if intervals:
             smry = open(output_path + "summary" + '_' + chr_name + "_" + str(thread_id) + ".csv", 'w')
 
         start_time = time.time()
         total_reads_processed = 0
         total_windows = 0
+        all_images = []
+        all_labels = []
         for interval in intervals:
             _start, _end = interval
             n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
@@ -247,7 +251,7 @@ def chromosome_level_parallelization(chr_list,
             # save the images
             for i, image in enumerate(images):
                 file_name_str = (image.chromosome_name, image.start_pos, image.end_pos)
-                file_name = '_'.join(map(str, file_name_str))
+                # file_name = '_'.join(map(str, file_name_str))
 
                 # assert len(image.image) == 100, "IMAGE LENGTH ERROR"
                 # for row in image.image:
@@ -255,24 +259,37 @@ def chromosome_level_parallelization(chr_list,
                 #     assert len(row) == 20, "ROW LENGTH ERROR"
                 #     for pixel in row:
                 #         assert len(pixel) == 4, "PIXEL LENGTH ERROR"
-                np_array_image = np.array(image.image, dtype=np.uint8)
-                np_array_image = np_array_image.transpose(2, 1, 0)
+                # np_array_image = np.array(image.image, dtype=np.uint8)
+                # np_array_image = np_array_image.transpose(2, 1, 0)
                 # zip_archive.write(file_name+"_image.ttf")
-                torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
+                # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".image")
+
+                all_images.append(image.image)
                 if train_mode:
-                    np_array_image = np.array(image.label, dtype=np.uint8)
-                    torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
+                    all_labels.append(image.label)
+                    # np_array_image = np.array(image.label, dtype=np.uint8)
+                    # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
                 # write in summary file
-                summary_string = image_path + file_name + "," + dictionary_file_path + "," + \
+                summary_string = image_file_name + "," + str(i) + "," + dictionary_file_path + "," + \
                                  ' '.join(map(str, file_name_str)) + "\n"
                 smry.write(summary_string)
+
+        hdf5_file = h5py.File(image_file_name, mode='w')
+        # the image dataset we save. The index name in h5py is "images".
+        img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (100, 20, 5), np.uint8,
+                                            compression='gzip')
+        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (20,), np.uint8)
+        # save the images and labels to the h5py file
+        img_dset[...] = all_images
+        label_dataset[...] = all_labels
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
               "READS: ", total_reads_processed,
               "WINDOWS: ", total_windows,
-              "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS", math.ceil(time.time()-start_time) % 60, "SEC")
+              "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+              math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
