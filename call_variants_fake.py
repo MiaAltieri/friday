@@ -105,7 +105,7 @@ def predict(test_file, batch_size, num_workers):
                         if current_genomic_position == 2009997:
                             print()
                             print(current_genomic_position, allele_dict_path, predicted_label, allele_dict_path)
-                            print(labels)
+                            print(labels[batch].data)
                         reference_dict[current_genomic_position] = allele_dict_path
                         prediction_dict[current_genomic_position].append((predicted_label, fake_probs))
 
