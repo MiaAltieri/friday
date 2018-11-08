@@ -226,7 +226,7 @@ def chromosome_level_parallelization(chr_list,
                     confident_tree=confident_intervals)
 
         smry = None
-        image_file_name = image_path + '_' + chr_name + "_" + str(thread_id) + ".h5py"
+        image_file_name = image_path + chr_name + "_" + str(thread_id) + ".h5py"
         if intervals:
             smry = open(output_path + chr_name + "_" + str(thread_id) + "_summary.csv", 'w')
 
