@@ -25,8 +25,10 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
             .def_readwrite("start_pos", &PileupImage::start_pos)
             .def_readwrite("end_pos", &PileupImage::end_pos)
-            .def_readwrite("image", &PileupImage::image)
-            .def_readwrite("label", &PileupImage::label);
+            .def_readwrite("image_alt1", &PileupImage::image_alt1)
+            .def_readwrite("image_alt2", &PileupImage::image_alt2)
+            .def_readwrite("label_alt1", &PileupImage::label_alt1)
+            .def_readwrite("label_alt2", &PileupImage::label_alt2);
 
         py::class_<ImageGenerator>(m, "ImageGenerator")
             .def(py::init<const string &, const string &, long long &, long long&,

@@ -206,8 +206,8 @@ def chromosome_level_parallelization(chr_list,
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
     for chr_name in chr_list:
-        interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-        # interval_start, interval_end = (2005000, 2010000)
+        # interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+        interval_start, interval_end = (2005000, 2010000)
         # interval_start, interval_end = (269856, 269996)
         # interval_start, interval_end = (1413980, 1413995)
         # interval_start, interval_end = (260000, 260999)
@@ -254,16 +254,24 @@ def chromosome_level_parallelization(chr_list,
             for i, image in enumerate(images):
                 record = (image.chromosome_name, image.start_pos, image.end_pos)
 
-                all_images.append(image.image)
+                all_images.append(image.image_alt1)
                 if train_mode:
-                    all_labels.append(image.label)
-                    # np_array_image = np.array(image.label, dtype=np.uint8)
-                    # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
+                    all_labels.append(image.label_alt1)
 
                 # write in summary file
                 summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
-                                 ' '.join(map(str, record)) + "\n"
+                                 ' '.join(map(str, record)) + " 1\n"
                 smry.write(summary_string)
+                global_index += 1
+
+                all_images.append(image.image_alt2)
+                if train_mode:
+                    all_labels.append(image.label_alt2)
+
+                summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
+                                 ' '.join(map(str, record)) + " 2\n"
+                smry.write(summary_string)
+
                 global_index += 1
 
         hdf5_file = h5py.File(image_file_name, mode='w')

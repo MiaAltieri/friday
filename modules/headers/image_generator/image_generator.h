@@ -9,7 +9,7 @@
 using namespace std;
 #include "../dataio/bam_handler.h"
 #include "../candidate_finding/candidate_finder.h"
-
+#define IMAGE_ROW vector<vector<int> >
 namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
     static constexpr int BASE_QUALITY_CAP = 40;
@@ -29,8 +29,10 @@ struct PileupImage {
     string chromosome_name;
     long long start_pos;
     long long end_pos;
-    vector<vector<vector<int> > >image;
-    vector<int> label;
+    vector<vector<vector<int> > >image_alt1;
+    vector<vector<vector<int> > >image_alt2;
+    vector<int> label_alt1;
+    vector<int> label_alt2;
     void set_values(string chromosome_name, long long start_pos, long long end_pos) {
         this->chromosome_name = chromosome_name;
         this->start_pos = start_pos;
@@ -55,10 +57,16 @@ public:
     void set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf);
 
     string get_reference_sequence(long long st_pos, long long end_pos);
-    vector<vector<int> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
+    void read_to_image_row(type_read read,
+                           long long &read_start,
+                           long long &read_end,
+                           vector<vector<int> >& image_row_alt1,
+                           vector<vector<int> >& image_row_alt2);
     vector<vector<int> > get_reference_row(string ref_seq);
     int get_image_label(int gt1, int gt2);
-    vector<int> get_window_labels(pair<long long, long long> window);
+    void set_window_labels(pair<long long, long long> window,
+                           vector<int>& label_alt1,
+                           vector<int>& label_alt2);
     vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
                                               vector<type_read> reads,
                                               bool train_mode);
@@ -66,7 +74,8 @@ public:
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);
     void assign_read_to_window(PileupImage& pileup_image,
-                               vector<vector<int> >& image_row,
+                               vector<vector<int> >& image_row_alt1,
+                               vector<vector<int> >& image_row_alt2,
                                long long read_start,
                                long long read_end);
 };

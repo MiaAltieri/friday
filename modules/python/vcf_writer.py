@@ -90,30 +90,59 @@ class VCFWriter:
         return tuple(split_values)
 
     @staticmethod
-    def process_prediction(pos, predictions):
+    def process_prediction(pos, prediction_alt1, prediction_alt2):
         # get the list of prediction labels
-        list_prediction_labels = [label for label, probs in predictions]
-        predicted_class = max(set(list_prediction_labels), key=list_prediction_labels.count)
+        # assume both are homozygous first
+        alt1_probability = [0.0, 0.0, 0.0]
+        alt2_probability = [0.0, 0.0, 0.0]
+        if prediction_alt1:
+            count = 0
+            for label, probability in prediction_alt1:
+                count += 1
+                for j, prob_value in enumerate(probability):
+                    alt1_probability[j] += prob_value
+            alt1_probability = [prob / count for prob in alt1_probability]
+        if prediction_alt2:
+            count = 0
+            for label, probability in prediction_alt2:
+                count += 1
+                for j, prob_value in enumerate(probability):
+                    alt2_probability[j] += prob_value
+            alt1_probability = [prob / count for prob in alt1_probability]
+        # probability that the site genotype is 0/0
+        p00 = min(alt1_probability[0], alt2_probability[0])
+        p01 = alt1_probability[1]
+        p11 = alt1_probability[2]
+        p02 = alt2_probability[1]
+        p22 = alt2_probability[2]
+        p12 = min(max(alt1_probability[1], alt1_probability[2]),
+                  max(alt2_probability[1], alt2_probability[2]))
 
+        # print(alt_probs)
+        prob_list = [p00, p01, p11, p02, p22, p12]
+        # print(prob_list)
+        sum_probs = sum(prob_list)
+        # print(sum_probs)
+        normalized_list = [(float(i) / sum_probs) if sum_probs else 0 for i in prob_list]
+        prob_list = normalized_list
+        # print(prob_list)
+        # print(sum(prob_list))
+        gq, index = 0, 0
+        for i, prob in enumerate(prob_list):
+            if gq <= prob and prob > 0:
+                index = i
+                gq = prob
         # get alts from label
-        genotype = VCFWriter.prediction_label_to_allele(predicted_class)
+        genotype = VCFWriter.prediction_label_to_allele(index)
         genotype = genotype[0] + '/' + genotype[1]
 
-        # get the probabilities
-        list_prediction_probabilities = [probs for label, probs in predictions]
-        num_classes = len(list_prediction_probabilities[0])
-        min_probs_for_each_class = [min(l[i] for l in list_prediction_probabilities) for i in range(num_classes)]
+        qual = sum(prob_list) - prob_list[0]
+        phred_qual = min(60, -10 * np.log10(1 - qual) if 1 - qual >= 0.0000001 else 60)
+        phred_qual = math.ceil(phred_qual * 100.0) / 100.0
+        phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
+        phred_gq = math.ceil(phred_gq * 100.0) / 100.0
 
-        # normalize the probabilities
-        sum_of_probs = sum(min_probs_for_each_class) if sum(min_probs_for_each_class) > 0 else 1
-        if sum(min_probs_for_each_class) <= 0:
-            print("SUM ZERO ENCOUNTERED IN: ", pos, predictions)
-            exit()
-        probabilities = [float(i) / sum_of_probs for i in min_probs_for_each_class]
-
-        qual, gq = VCFWriter.get_qual_and_gq(probabilities, predicted_class)
-
-        return genotype, qual, gq
+        return genotype, phred_qual, phred_gq
 
     @staticmethod
     def get_proper_alleles(positional_record, genotype):

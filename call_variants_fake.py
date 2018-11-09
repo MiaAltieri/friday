@@ -35,7 +35,8 @@ HOM = 0
 HET = 1
 HOM_ALT = 2
 
-prediction_dict = defaultdict(list)
+prediction_dict_alt1 = defaultdict(list)
+prediction_dict_alt2 = defaultdict(list)
 reference_dict = defaultdict(tuple)
 
 
@@ -66,7 +67,6 @@ def predict(test_file, batch_size, num_workers):
     # TO HERE
     with torch.no_grad():
         for labels, positional_info, dictionary_path in tqdm(test_loader, ncols=50):
-
             start_index = 0
             end_index = labels.size(1)
             unrolling_genomic_position = np.zeros((labels.size(0)), dtype=np.int64)
@@ -90,20 +90,24 @@ def predict(test_file, batch_size, num_workers):
                 for batch in range(batches):
 
                     allele_dict_path = dictionary_path[batch]
-                    chr_name, start_pos, end_pos = positional_info[batch].split(' ')
+                    chr_name, start_pos, end_pos, allele = positional_info[batch].split(' ')
+                    allele = int(allele)
                     # needs to be a check here
                     chromosome_name = chr_name
                     # current_genomic_position = int(start_positions[batch])
                     current_genomic_position = int(start_pos) + unrolling_genomic_position[batch]
 
                     true_label = labels[batch, seq_index - start_index]
-                    fake_probs = [0.0] * 6
+                    fake_probs = [0.0] * 3
                     fake_probs[true_label] = 1.0
                     top_n, top_i = torch.FloatTensor(fake_probs).topk(1)
                     predicted_label = top_i[0].item()
                     if predicted_label != 0:
                         reference_dict[current_genomic_position] = allele_dict_path
-                        prediction_dict[current_genomic_position].append((predicted_label, fake_probs))
+                        if allele == 1:
+                            prediction_dict_alt1[current_genomic_position].append((predicted_label, fake_probs))
+                        elif allele == 2:
+                            prediction_dict_alt2[current_genomic_position].append((predicted_label, fake_probs))
 
                     # preds = output_preds[batch, :].data
                     # top_n, top_i = preds.topk(1)
@@ -117,8 +121,9 @@ def predict(test_file, batch_size, num_workers):
 
 
 def get_record_from_prediction(pos, positional_record):
-    predictions = prediction_dict[pos]
-    genotype, qual, gq = VCFWriter.process_prediction(pos, predictions)
+    prediction_alt1 = prediction_dict_alt1[pos]
+    prediction_alt2 = prediction_dict_alt2[pos]
+    genotype, qual, gq = VCFWriter.process_prediction(pos, prediction_alt1, prediction_alt2)
     return positional_record, genotype, qual, gq
 
 
@@ -202,7 +207,7 @@ def call_variant(csv_file, batch_size, num_workers, bam_file_path, sample_name, 
     sys.stderr.write(TextColor.GREEN + "INFO: " + TextColor.END + "PREDICTION GENERATED SUCCESSFULLY.\n")
     sys.stderr.write(TextColor.GREEN + "INFO: " + TextColor.END + "COMPILING PREDICTIONS TO CALL VARIANTS.\n")
 
-    pos_list = list(prediction_dict.keys())
+    pos_list = list(set(prediction_dict_alt1.keys()) | set(prediction_dict_alt2.keys()))
     each_chunk_size = int(len(pos_list) / max_threads)
     thread_no = 1
     # produce_vcf_records(chr_name, vcf_dir, thread_no, pos_list)
