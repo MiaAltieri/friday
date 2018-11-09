@@ -79,7 +79,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
             ModelHandler.load_model_for_training(retrain_model_path,
                                                  input_channels=5,
                                                  seq_len=ImageSizeOptions.SEQ_LENGTH,
-                                                 num_classes=6)
+                                                 num_classes=3)
 
         if train_mode is True:
             epoch_limit = prev_ite + epoch_limit
@@ -90,7 +90,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
                                                                   gru_layers=gru_layers,
                                                                   hidden_size=hidden_size,
                                                                   seq_len=ImageSizeOptions.SEQ_LENGTH,
-                                                                  num_classes=6)
+                                                                  num_classes=3)
         prev_ite = 0
 
     encoder_optimizer = torch.optim.Adam(encoder_model.parameters(),
@@ -205,7 +205,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
             progress_bar.close()
 
         stats_dictioanry = test(test_file, batch_size, gpu_mode, encoder_model, decoder_model, num_workers,
-                                gru_layers, hidden_size, num_classes=6)
+                                gru_layers, hidden_size, num_classes=3)
         stats['loss'] = stats_dictioanry['loss']
         stats['accuracy'] = stats_dictioanry['accuracy']
         stats['loss_epoch'].append((epoch, stats_dictioanry['loss']))
