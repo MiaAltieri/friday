@@ -14,7 +14,7 @@ namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
     static constexpr int BASE_QUALITY_CAP = 40;
     static constexpr int MAP_QUALITY_CAP = 60;
-    static constexpr int REF_ROW_BAND = 1;
+    static constexpr int REF_ROW_BAND = 2;
     static constexpr int IMAGE_HEIGHT = 100;
 };
 
@@ -74,8 +74,8 @@ public:
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);
     void assign_read_to_window(PileupImage& pileup_image,
-                               vector<vector<int> >& image_row_alt1,
-                               vector<vector<int> >& image_row_alt2,
+                               vector<vector<int> > image_row_alt1,
+                               vector<vector<int> > image_row_alt2,
                                long long read_start,
                                long long read_end);
 };

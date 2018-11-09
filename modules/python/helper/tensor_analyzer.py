@@ -2,6 +2,8 @@ import math
 import argparse
 import torch
 import numpy as np
+import h5py
+from torchvision import transforms
 
 
 def get_strand_color(is_rev):
@@ -32,7 +34,7 @@ def get_alt_type(alt_type_color):
         return ' '
     elif alt_type_color == 5:
         return '0'
-    elif alt_type_color == 240:
+    elif alt_type_color == 254:
         return '1'
     elif alt_type_color == 125:
         return '2'
@@ -68,11 +70,6 @@ def analyze_tensor(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
     img_h = 50
-    # label_c = label.size(0)
-    # print()
-    # for i in range(label_c):
-    #     print(label[i].item(), end='')
-    # print()
     print("BASE CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
@@ -110,21 +107,30 @@ if __name__ == '__main__':
         "--tensor_file",
         type=str,
         required=True,
-        help="Training data description csv file."
+        help="H5PY file path"
     )
     parser.add_argument(
-        "--label_file",
-        type=str,
+        "--index",
+        type=int,
         required=True,
-        help="Training data description csv file."
+        help="Index of image."
     )
     FLAGS, unparsed = parser.parse_known_args()
-    if FLAGS.label_file:
-        labels = torch.load(FLAGS.label_file)
-        for i in range(0, labels.size(0)):
-            print(labels[i].item(), end='')
-        print()
 
     if FLAGS.tensor_file:
-        image = torch.load(FLAGS.tensor_file)
+        hdf5_image = FLAGS.tensor_file
+        hdf5_index = FLAGS.index
+        hdf5_file = h5py.File(hdf5_image, 'r')
+
+        image_dataset = hdf5_file['images']
+        image = np.array(image_dataset[hdf5_index], dtype=np.uint8)
+        transform = transforms.Compose([transforms.ToTensor()])
+        image = transform(image)
+        image = image.transpose(1, 2)
+
+        label_dataset = hdf5_file['labels']
+        label = np.array(label_dataset[hdf5_index], dtype=np.long)
+        for l in label:
+            print(l, end='')
+        print()
         analyze_tensor(image)
