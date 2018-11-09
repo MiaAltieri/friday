@@ -18,7 +18,7 @@ Input:
 Returns:
 - Loss value
 """
-CLASS_WEIGHTS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+CLASS_WEIGHTS = [1.0, 1.0, 1.0]
 
 
 def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_workers, gru_layers, hidden_size,
@@ -113,8 +113,7 @@ def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_work
                 pbar.update(1)
                 cm_value = confusion_matrix.value()
                 denom = (cm_value.sum() - cm_value[0][0]) if (cm_value.sum() - cm_value[0][0]) > 0 else 1.0
-                accuracy = 100.0 * (cm_value[1][1] + cm_value[2][2] + cm_value[3][3] + cm_value[4][4] +
-                                    cm_value[5][5]) / denom
+                accuracy = 100.0 * (cm_value[1][1] + cm_value[2][2]) / denom
                 pbar.set_description("Accuracy: " + str(accuracy))
 
     avg_loss = total_loss / total_images if total_images else 0

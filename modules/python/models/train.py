@@ -22,7 +22,7 @@ Input:
 Return:
 - A trained model
 """
-CLASS_WEIGHTS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+CLASS_WEIGHTS = [1.0, 1.0, 1.0]
 
 
 def save_best_model(encoder_model, decoder_model, encoder_optimizer, decoder_optimizer, hidden_size, layers, epoch,
@@ -182,7 +182,6 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
                     output_dec, decoder_hidden, attn = decoder_model(attention_index_onehot,
                                                                      context_vector=context_vector,
                                                                      encoder_hidden=hidden_encoder)
-
                     # loss
                     loss += criterion(output_dec, y)
 
