@@ -25,6 +25,16 @@ typedef struct{
     string ref;
     string alt_allele;
     int alt_type;
+
+    string get_ref() {
+        return ref;
+    }
+    string get_alt_allele() {
+        return alt_allele;
+    }
+    int get_alt_type(){
+        return alt_type;
+    }
 } type_alt_allele;
 
 typedef struct{
@@ -42,12 +52,27 @@ typedef struct{
 //    vector<type_alt_allele> alt_allele;
 } type_vcf_record;
 
+
+typedef struct{
+    string chromosome_name;
+    uint64_t start_pos;
+    uint64_t end_pos;
+    string id;
+    double qual;
+    bool is_phased;
+    bool is_filter_pass;
+    string sample_name;
+    vector<int> genotype;
+    vector<string> filters;
+    vector<type_alt_allele> alt_allele;
+} type_positional_vcf_record;
+
 class VCF_handler {
     public:
         VCF_handler(string file_path);
-//        map<long long, vector<type_vcf_record> > get_positional_vcf_records(string chromosome_name,
-//                                                                   long long start,
-//                                                                   long long stop) ;
+        map<long long, vector<type_positional_vcf_record> > get_positional_vcf_records(string chromosome_name,
+                                                                                       long long start,
+                                                                                       long long stop);
         vector<type_vcf_record> get_vcf_records(string chromosome_name,
                                                 long long start,
                                                 long long stop) ;

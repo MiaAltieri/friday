@@ -1,23 +1,12 @@
 from build import FRIDAY
 from graphviz import Digraph
 
-
-class DeBruijnGraphOptions(object):
-    MIN_K = 10
-    MAX_K = 100
-    STEP_K = 1
-    MIN_EDGE_SUPPORT = 2
-    MAX_ALLOWED_PATHS = 256
-
-    # base and map quality
-    MIN_BASE_QUALITY = 15
-    MIN_MAP_QUALITY = 20
+from modules.python.Options import DeBruijnGraphOptions
 
 
 class DeBruijnHaplotyper:
-    def __init__(self, bam_file_path, fasta_file_path, contig, start, end):
-        self.bam_file_path = bam_file_path
-        self.fasta_file_path = fasta_file_path
+    def __init__(self, fasta_handler, contig, start, end):
+        self.fasta_handler = fasta_handler
         self.contig = contig
         self.region_start = start
         self.region_end = end
@@ -48,10 +37,9 @@ class DeBruijnHaplotyper:
         # print(self.dot.source)
         dot.render('outputs/'+output_filename+'.sv')
 
-    def find_haplotypes(self):
+    def find_haplotypes(self, reads):
         # get the reference from the fasta file
-        fasta_handler = FRIDAY.FASTA_handler(self.fasta_file_path)
-        reference_sequence = fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
+        reference_sequence = self.fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
         min_k, max_k = FRIDAY.DeBruijnGraph.find_min_k_from_ref(reference_sequence,
                                                                 DeBruijnGraphOptions.MIN_K,
                                                                 DeBruijnGraphOptions.MAX_K,
@@ -59,14 +47,6 @@ class DeBruijnHaplotyper:
         # couldn't build ref without cycle
         if min_k == -1:
             return None, None
-
-        # get the reads from the bam file
-        bam_handler = FRIDAY.BAM_handler(self.bam_file_path)
-        reads = bam_handler.get_reads(self.contig,
-                                      self.region_start,
-                                      self.region_end,
-                                      DeBruijnGraphOptions.MIN_MAP_QUALITY,
-                                      DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
         # print(reference_sequence)
         # min_k = 44

@@ -103,6 +103,11 @@ struct type_read{
     vector <int> bad_indicies;
     int mapping_quality;
     vector <int> base_qualities;
+    int read_id;
+
+    void set_read_id(int id) {
+        this->read_id = id;
+    }
 
     void set_position(long long pos){
         this->pos = pos;
@@ -122,6 +127,14 @@ struct type_read{
         this->bad_indicies = that.bad_indicies;
         this->mapping_quality = that.mapping_quality;
         this->base_qualities = that.base_qualities;
+    }
+
+    bool operator<(const type_read& that) {
+        if(this->pos == that.pos) {
+            return this->pos_end < that.pos_end;
+        } else {
+            return this->pos < that.pos;
+        }
     }
 };
 
@@ -150,6 +163,7 @@ class BAM_handler {
     public:
         htsFile* hts_file;
         hts_idx_t* idx;
+        bam_hdr_t* header;
 
         BAM_handler(string path);
 

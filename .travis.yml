@@ -1,0 +1,38 @@
+language: cpp
+
+matrix:
+  fast_finish: true
+  include:
+    - os: osx
+      env: CC_COMPILER=clang CXX_COMPILER=clang++
+
+    - os: linux
+      sudo: false
+      env: CC_COMPILER=gcc CXX_COMPILER=g++
+
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - gcc-7
+      env: CC_COMPILER=gcc-7 CXX_COMPILER=g++-7
+
+script:
+  - $CC_COMPILER -v
+  - $CXX_COMPILER -v
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+notifications:
+  email:
+    - kishwar.shafin@gmail.com
+
+env:
+  global:
+  - LANG="en_US.UTF-8"

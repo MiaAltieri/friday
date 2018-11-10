@@ -43,3 +43,5 @@ build/
 # debug outputs
 outputs/
 out.txt
+.DS_store
+img.txt

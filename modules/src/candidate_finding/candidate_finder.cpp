@@ -132,32 +132,32 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                 ref_position += cigar.length;
                 break;
             case CIGAR_OPERATIONS::SOFT_CLIP:
-                base_quality = *std::min_element(read.base_qualities.begin() + read_index,
-                                                 read.base_qualities.begin() + (read_index + cigar.length));
-                reference_index = ref_position - ref_start - 1;
-                region_index = ref_position - region_start - 1;
-
-                if(ref_position - 1 >= region_start &&
-                   ref_position - 1 <= region_end &&
-                   base_quality >= ActiveRegionFinder_options::min_base_quality) {
-                    // process insert allele here
-                    string ref = reference_sequence.substr(reference_index, 1);
-                    string alt;
-                    if(read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, cigar.length + 1);
-                    else alt = ref + read.sequence.substr(read_index, cigar.length);
-
-                    Candidate candidate_alt(ref_position - 1, ref_position, ref, alt, AlleleType::INSERT_ALLELE);
-                    if(AlleleFrequencyMap.find(candidate_alt) != AlleleFrequencyMap.end()) {
-                        AlleleFrequencyMap[candidate_alt] += 1;
-                    } else {
-                        AlleleFrequencyMap[candidate_alt] = 1;
-                    }
-
-                    if(AlleleMap[region_index].find(candidate_alt) ==  AlleleMap[region_index].end())
-                        AlleleMap[region_index].insert(candidate_alt);
-
+//                base_quality = *std::min_element(read.base_qualities.begin() + read_index,
+//                                                 read.base_qualities.begin() + (read_index + cigar.length));
+//                reference_index = ref_position - ref_start - 1;
+//                region_index = ref_position - region_start - 1;
+//
+//                if(ref_position - 1 >= region_start &&
+//                   ref_position - 1 <= region_end &&
+//                   base_quality >= ActiveRegionFinder_options::min_base_quality) {
+//                    // process insert allele here
+//                    string ref = reference_sequence.substr(reference_index, 1);
+//                    string alt;
+//                    if(read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, cigar.length + 1);
+//                    else alt = ref + read.sequence.substr(read_index, cigar.length);
+//
+//                    Candidate candidate_alt(ref_position - 1, ref_position, ref, alt, AlleleType::INSERT_ALLELE);
+//                    if(AlleleFrequencyMap.find(candidate_alt) != AlleleFrequencyMap.end()) {
+//                        AlleleFrequencyMap[candidate_alt] += 1;
+//                    } else {
+//                        AlleleFrequencyMap[candidate_alt] = 1;
+//                    }
+//
+//                    if(AlleleMap[region_index].find(candidate_alt) ==  AlleleMap[region_index].end())
+//                        AlleleMap[region_index].insert(candidate_alt);
+//
 //                    cout<<"SOFT CLIP: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
-                }
+//                }
                 read_index += cigar.length;
                 break;
             case CIGAR_OPERATIONS::REF_SKIP:
@@ -171,9 +171,11 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
     }
 }
 
-vector<PositionalCandidateRecord> CandidateFinder::find_candidates(vector<type_read> reads) {
+pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinder::find_candidates(
+        vector<type_read> reads) {
 
-    vector<PositionalCandidateRecord> all_positional_candidates;
+    map<long long, PositionalCandidateRecord> all_positional_candidates;
+    set<long long> filtered_candidate_positions;
 
     vector<int> coverage(region_end - region_start + 1, 0);
     for(auto &read:reads) {
@@ -189,14 +191,11 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(vector<type_r
             if(coverage[i] > 0)
                 freq = (int)ceil(100.0 *  ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]));
 
-            if(AlleleFrequencyMap[candidate] <= CandidateFinder_options::min_count_threshold ||
-               freq < CandidateFinder_options::freq_threshold) {
-//                cout << "NOT CONSIDERING CANDIDATE: ";
-//                cout<<candidate.pos<<" "<<candidate.allele.ref<<" "<<candidate.allele.alt<<endl;
-//                cout<<"COUNT: "<<AlleleFrequencyMap[candidate]<<" FREQ: "<<freq<<endl;
-                continue;
+            if(AlleleFrequencyMap[candidate] > CandidateFinder_options::min_count_threshold &&
+               freq >= CandidateFinder_options::freq_threshold) {
+                filtered_candidate_positions.insert(i + this->region_start);
+//                cout<<"CANDIDATE: "<<i+this->region_start<<" "<<candidate.allele.ref<<" "<<candidate.allele.alt<<" "<<candidate.allele.alt_type<<" "<<AlleleFrequencyMap[candidate]<<" "<<coverage[i]<<endl;
             }
-
             positional_candidates.push_back(make_pair(freq, candidate));
         }
         if(positional_candidates.empty()) continue;
@@ -218,8 +217,8 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(vector<type_r
                                    candidates.second.pos_end);
         }
 
-        all_positional_candidates.push_back(pos_candidate);
+        all_positional_candidates[i + this->region_start] = pos_candidate;
     }
 
-    return all_positional_candidates;
+    return make_pair(filtered_candidate_positions, all_positional_candidates);
 }

@@ -266,6 +266,9 @@ vector<string> DeBruijnGraph::get_haplotypes() {
 vector<string> DeBruijnGraph::generate_haplotypes(string reference, vector <type_read> reads, int kmer_size) {
     add_reference_path(reference, kmer_size);
     for(auto &read: reads) {
+        if(read.mapping_quality < DeBruijnGraph_options::MIN_MAP_QUALITY) continue;
+        if(read.pos_end < region_start) continue;
+        if(read.pos > region_end) continue;
         add_read_to_graph(read, kmer_size);
     }
     if(is_cyclic()) {
