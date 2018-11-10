@@ -1,4 +1,7 @@
 # FRIDAY
+
+[![Build Status](https://travis-ci.com/kishwarshafin/friday.svg?branch=master)](https://travis-ci.com/kishwarshafin/friday)<br/>
+
 FRIDAY is the genomic variant analysis tool that uses machine translation based deep neural networks to call variants on next-generation sequencing technology. The module is curated to apply deep neural networks in third generation long read sequencing technology like the Oxford Nanopore.
 
 ## Documentation
