@@ -194,9 +194,10 @@ pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinde
             if(AlleleFrequencyMap[candidate] > CandidateFinder_options::min_count_threshold &&
                freq >= CandidateFinder_options::freq_threshold) {
                 filtered_candidate_positions.insert(i + this->region_start);
+                positional_candidates.push_back(make_pair(freq, candidate));
 //                cout<<"CANDIDATE: "<<i+this->region_start<<" "<<candidate.allele.ref<<" "<<candidate.allele.alt<<" "<<candidate.allele.alt_type<<" "<<AlleleFrequencyMap[candidate]<<" "<<coverage[i]<<endl;
             }
-            positional_candidates.push_back(make_pair(freq, candidate));
+
         }
         if(positional_candidates.empty()) continue;
 
