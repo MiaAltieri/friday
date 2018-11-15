@@ -8,6 +8,7 @@ from torchvision import transforms
 import numpy as np
 from modules.python.models.dataloader import SequenceDataset
 from modules.python.TextColor import TextColor
+from modules.python.Options import ImageSizeOptions
 """
 This script will evaluate a model and return the loss value.
 
@@ -70,8 +71,8 @@ def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_work
 
                 loss = 0
                 total_seq_length = images.size(2)
-                start_index = 0
-                end_index = images.size(2)
+                start_index = ImageSizeOptions.CONTEXT_SIZE
+                end_index = start_index + (ImageSizeOptions.SEQ_LENGTH - 2 * ImageSizeOptions.CONTEXT_SIZE)
 
                 # from analysis.analyze_png_img import analyze_tensor
                 # print(labels[0, :].data.numpy())
@@ -87,6 +88,8 @@ def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_work
 
                     attention_index_onehot.zero_()
                     attention_index_onehot.scatter_(1, attention_index, 1)
+                    # print("\n", seq_index, attention_index_onehot, y)
+                    # exit()
 
                     output_dec, decoder_hidden, attn = decoder_model(attention_index_onehot,
                                                                      context_vector=context_vector,
