@@ -47,7 +47,7 @@ class CandidateFinder:
                 current_window_st = candidate_position - ImageSizeOptions.MIN_BASES_ON_LEFT
                 current_window_end = candidate_position + ImageSizeOptions.BASES_ON_RIGHT
                 all_windows.append((current_window_st, current_window_end))
-            elif candidate_position <= current_window_end - ImageSizeOptions.MIN_BASES_ON_LEFT:
+            elif candidate_position < current_window_end - ImageSizeOptions.MIN_BASES_ON_LEFT:
                 continue
             else:
                 current_window_st = candidate_position - ImageSizeOptions.MIN_BASES_ON_LEFT

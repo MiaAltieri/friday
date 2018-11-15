@@ -252,7 +252,9 @@ def chromosome_level_parallelization(chr_list,
 
             # save the images
             for i, image in enumerate(images):
-                record = (image.chromosome_name, image.start_pos, image.end_pos)
+                record = (image.chromosome_name,
+                          image.start_pos + ImageSizeOptions.CONTEXT_SIZE,
+                          image.end_pos - ImageSizeOptions.CONTEXT_SIZE)
 
                 all_images.append(image.image)
                 if train_mode:
@@ -272,7 +274,7 @@ def chromosome_level_parallelization(chr_list,
                                                                             ImageSizeOptions.SEQ_LENGTH,
                                                                             ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
                                             compression='gzip')
-        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.SEQ_LENGTH,), np.uint8)
+        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
         # save the images and labels to the h5py file
         img_dset[...] = all_images
         label_dataset[...] = all_labels

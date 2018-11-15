@@ -328,12 +328,15 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
                                                           vector<type_read> reads, bool train_mode) {
     // container for all the images we will generate
     vector<PileupImage> pileup_images(windows.size());
-    int inferred_window_size = windows[0].second - windows[0].first;
+    int inferred_window_size = windows[0].second - windows[0].first + 2 * PileupPixels::CONTEXT_SIZE;
 
     // initialize all the pileup images with reference sequence
     for(int i=0; i<windows.size(); i++) {
-        pileup_images[i].set_values(this->chromosome_name, windows[i].first, windows[i].second);
-        string ref_seq = get_reference_sequence(windows[i].first, windows[i].second);
+        pileup_images[i].set_values(this->chromosome_name,
+                                    windows[i].first - PileupPixels::CONTEXT_SIZE,
+                                    windows[i].second + PileupPixels::CONTEXT_SIZE);
+        string ref_seq = get_reference_sequence(windows[i].first - PileupPixels::CONTEXT_SIZE,
+                                                windows[i].second + PileupPixels::CONTEXT_SIZE);
         pileup_images[i].image.insert(pileup_images[i].image.end(), PileupPixels::REF_ROW_BAND, get_reference_row(ref_seq));
         if(train_mode) {
             pileup_images[i].label = get_window_labels(windows[i]);
