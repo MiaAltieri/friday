@@ -205,12 +205,11 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    for chr_name in chr_list:
-        interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
-        # interval_start, interval_end = (2005000, 2010000)
-        # interval_start, interval_end = (269856, 269996)
-        # interval_start, interval_end = (1413980, 1413995)
-        # interval_start, interval_end = (260000, 260999)
+    for chr_name, region in chr_list:
+        if not region:
+            interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
+        else:
+            interval_start, interval_end = tuple(region)
 
         all_intervals = []
         for pos in range(interval_start, interval_end, max_size):
@@ -350,6 +349,23 @@ def get_chromosme_list(chromosome_names):
 
     chromosome_name_list = []
     for name in split_names:
+        # split on region
+        region = None
+        if ':' in name:
+            name_region = name.strip().split(':')
+
+            if len(name_region) != 2:
+                sys.stderr.print(TextColor.RED + "ERROR: --chromosome_name INVALID value.\n" + TextColor.END)
+                exit(0)
+
+            name, region = tuple(name_region)
+            region = region.strip().split('-')
+            region = [int(pos) for pos in region]
+
+            if len(region) != 2 or not region[0] <= region[1]:
+                sys.stderr.print(TextColor.RED + "ERROR: --chromosome_name INVALID value.\n" + TextColor.END)
+                exit(0)
+
         range_split = name.split('-')
         if len(range_split) > 1:
             chr_prefix = ''
@@ -366,9 +382,9 @@ def get_chromosme_list(chromosome_names):
             int_ranges = sorted(int_ranges)
 
             for chr_seq in range(int_ranges[0], int_ranges[-1] + 1):
-                chromosome_name_list.append(chr_prefix + str(chr_seq))
+                chromosome_name_list.append((chr_prefix + str(chr_seq), region))
         else:
-            chromosome_name_list.append(name)
+            chromosome_name_list.append((name, region))
 
     return chromosome_name_list
 

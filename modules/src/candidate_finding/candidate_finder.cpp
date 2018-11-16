@@ -57,8 +57,8 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
 
                         if(AlleleMap[region_index].find(candidate_alt) ==  AlleleMap[region_index].end())
                             AlleleMap[region_index].insert(candidate_alt);
-
-//                        cout<<"SNP: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<" "<<AlleleMap[region_index].size()<<endl;
+//                        cout<<read.pos<<" "<<ref_position<<" "<<region_start<<" "<<i<<" ";
+//                        cout<<"SNP: "<<read.query_name<<" "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<" "<<AlleleMap[region_index].size()<<endl;
                         coverage[region_index] += 1;
                     }
                     else if(ref_position <= region_end &&

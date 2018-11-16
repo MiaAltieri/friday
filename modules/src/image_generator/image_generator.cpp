@@ -101,7 +101,13 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         alt_color = 5;
                         if(which_allele != 0)
                             alt_color = which_allele == 1 ? 240 : 125;
-//                        cout<<"SNP: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<which_allele<<" "<<int(alt_color)<<endl;
+//                        if(read.base_qualities[read_index] >= CandidateFinder_options::min_base_quality) {
+//                            cout << "SNP: " << ref_position << " " << ref << " " << alt << " " << which_allele << " "
+//                                 << int(alt_color) << endl;
+//                        } else {
+//                            cout <<"LOW BASE QUALITY "<<read.base_qualities[read_index]<< " SNP: " << ref_position << " " << ref << " " << alt << " " << which_allele << " "
+//                                 << int(alt_color) << endl;
+//                        }
                         image_row.push_back({ base_color, base_qual_color, map_qual_color, strand_color, alt_color});
                     } else if(ref_position >= ref_start && ref_position < ref_end) {
                         if(read_start == -1) {
@@ -342,13 +348,13 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
             pileup_images[i].label = get_window_labels(windows[i]);
         }
     }
-
     // now iterate through each of the reads and add it to different windows if read overlaps
     for(int i=0; i<reads.size(); i++) {
         reads[i].set_read_id(i);
         vector<int> windows_indices;
         for(int j=0; j < windows.size(); j++) {
-            if(overlap_length_between_ranges(make_pair(reads[i].pos, reads[i].pos_end), windows[j])){
+            if(overlap_length_between_ranges(make_pair(reads[i].pos, reads[i].pos + reads[i].sequence.length() + 1),
+                                             windows[j])) {
                 windows_indices.push_back(j);
             }
         }
