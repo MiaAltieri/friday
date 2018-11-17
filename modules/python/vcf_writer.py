@@ -26,8 +26,6 @@ class VCFWriter:
         genotype = self.get_genotype_tuple(genotype)
         end_pos = int(end_pos) + 1
         st_pos = int(st_pos)
-
-        print(str(chrm), st_pos, end_pos, qual, rec_filter, alleles, genotype, gq)
         vcf_record = self.vcf_file.new_record(contig=str(chrm), start=st_pos, stop=end_pos, id='.', qual=qual,
                                               filter=rec_filter, alleles=alleles, GT=genotype, GQ=gq)
         self.vcf_file.write(vcf_record)
