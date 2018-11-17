@@ -90,8 +90,8 @@ def predict(test_file, batch_size, model_path, gpu_mode, num_workers):
     sys.stderr.write(TextColor.PURPLE + 'MODEL LOADED\n' + TextColor.END)
     with torch.no_grad():
         for images, dictionary_path, positional_info in tqdm(testloader, ncols=50):
-            start_index = 0
-            end_index = images.size(2)
+            start_index = ImageSizeOptions.CONTEXT_SIZE
+            end_index = start_index + (ImageSizeOptions.SEQ_LENGTH - 2 * ImageSizeOptions.CONTEXT_SIZE)
 
             if gpu_mode:
                 # encoder_hidden = encoder_hidden.cuda()
