@@ -27,7 +27,7 @@ class VCFWriter:
         end_pos = int(end_pos) + 1
         st_pos = int(st_pos)
 
-        print(str(chrm), st_pos, end_pos, qual, rec_filter, alleles, genotype, gq)
+        # print(str(chrm), st_pos, end_pos, qual, rec_filter, alleles, genotype, gq)
         vcf_record = self.vcf_file.new_record(contig=str(chrm), start=st_pos, stop=end_pos, id='.', qual=qual,
                                               filter=rec_filter, alleles=alleles, GT=genotype, GQ=gq)
         self.vcf_file.write(vcf_record)
@@ -118,8 +118,9 @@ class VCFWriter:
 
     @staticmethod
     def get_proper_alleles(positional_record, genotype):
-        alts = [(positional_record.alt1, positional_record.alt1_type),
-                (positional_record.alt2, positional_record.alt2_type)]
+        alts = [(positional_record.alt1, positional_record.alt1_type)]
+        if positional_record.alt2 != '.' and positional_record.alt2_type != 0:
+            alts.append((positional_record.alt2, positional_record.alt2_type))
 
         gts = genotype.split('/')
         refined_alt = []
