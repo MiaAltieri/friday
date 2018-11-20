@@ -78,10 +78,7 @@ class LocalAssembler:
                                                CandidateFinderOptions.MIN_MAP_QUALITY,
                                                DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
-        print(len(all_reads))
         reads_to_keep = min(int(math.ceil(len(all_reads) * downsample_rate)), int(AlingerOptions.MAX_READS_IN_REGION))
-        print(reads_to_keep)
-        exit()
 
         if len(all_reads) > reads_to_keep:
             # https://github.com/google/nucleus/blob/master/nucleus/util/utils.py
