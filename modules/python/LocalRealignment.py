@@ -1,5 +1,6 @@
 from build import FRIDAY
 import numpy as np
+import math
 from modules.python.ActiveRegionFinder import ActiveRegionFinder, ActiveRegionOptions
 from modules.python.DeBruijnHaplotyper import DeBruijnHaplotyper
 from modules.python.Options import AlingerOptions, CandidateFinderOptions, DeBruijnGraphOptions
@@ -69,7 +70,7 @@ class LocalAssembler:
 
         return realigned_reads
 
-    def perform_local_assembly(self, perform_alignment=True):
+    def perform_local_assembly(self, downsample_rate, perform_alignment=True):
         # get the reads from the bam file
         all_reads = self.bam_handler.get_reads(self.chromosome_name,
                                                self.region_start_position,
@@ -77,7 +78,12 @@ class LocalAssembler:
                                                CandidateFinderOptions.MIN_MAP_QUALITY,
                                                DeBruijnGraphOptions.MIN_BASE_QUALITY)
 
-        if len(all_reads) > AlingerOptions.MAX_READS_IN_REGION:
+        print(len(all_reads))
+        reads_to_keep = min(int(math.ceil(len(all_reads) * downsample_rate)), int(AlingerOptions.MAX_READS_IN_REGION))
+        print(reads_to_keep)
+        exit()
+
+        if len(all_reads) > reads_to_keep:
             # https://github.com/google/nucleus/blob/master/nucleus/util/utils.py
             # reservoir_sample method utilized here
             random = np.random.RandomState(AlingerOptions.RANDOM_SEED)

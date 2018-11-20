@@ -44,7 +44,7 @@ class View:
     """
     Process manager that runs sequence of processes to generate images and their labebls.
     """
-    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, confident_tree):
+    def __init__(self, chromosome_name, bam_file_path, reference_file_path, vcf_path, train_mode, confident_tree, downsample_rate):
         """
         Initialize a manager object
         :param chromosome_name: Name of the chromosome
@@ -63,6 +63,7 @@ class View:
         self.train_mode = train_mode
         self.confident_tree = confident_tree[chromosome_name] if confident_tree else None
         self.interval_tree = IntervalTree(self.confident_tree) if confident_tree else None
+        self.downsample_rate = downsample_rate
 
         # --- initialize names ---
         # name of the chromosome
@@ -106,7 +107,7 @@ class View:
                                          start_position,
                                          end_position)
 
-        reads = local_assembler.perform_local_assembly()
+        reads = local_assembler.perform_local_assembly(self.downsample_rate)
 
         if not reads:
             return 0, 0, None, None
@@ -191,6 +192,7 @@ def chromosome_level_parallelization(chr_list,
                                      total_threads,
                                      thread_id,
                                      train_mode,
+                                     downsample_rate,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -222,7 +224,8 @@ def chromosome_level_parallelization(chr_list,
                     reference_file_path=ref_file,
                     vcf_path=vcf_file,
                     train_mode=train_mode,
-                    confident_tree=confident_intervals)
+                    confident_tree=confident_intervals,
+                    downsample_rate=downsample_rate)
 
         smry = None
         image_file_name = image_path + chr_name + "_" + str(thread_id) + ".h5py"
@@ -447,6 +450,13 @@ if __name__ == '__main__':
         required=False,
         help="Reference corresponding to the BAM file."
     )
+    parser.add_argument(
+        "--downsample_rate",
+        type=float,
+        required=False,
+        default=1.0,
+        help="Reference corresponding to the BAM file."
+    )
     FLAGS, unparsed = parser.parse_known_args()
     chr_list = get_chromosme_list(FLAGS.chromosome_name)
     # if the confident bed is not empty then create the tree
@@ -469,5 +479,6 @@ if __name__ == '__main__':
                                      image_dir,
                                      FLAGS.threads,
                                      FLAGS.thread_id,
-                                     FLAGS.train_mode)
+                                     FLAGS.train_mode,
+                                     FLAGS.downsample_rate)
 

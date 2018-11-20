@@ -98,6 +98,115 @@ def analyze_tensor(image):
         print()
 
 
+def save_base_quality_array(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 10
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+                image_row.append([image[1][j][i], 0, 0, 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("base_quality_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_map_quality_array(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 10
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            image_row.append([0, image[2][j][i], 0, 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("map_quality_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_strand_array(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 10
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            image_row.append([image[3][j][i], 0, 0, 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("strand_color_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_alt_freq(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 10
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            image_row.append([0, 0, image[4][j][i], 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("alt_freq_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_base_array(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 10
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            if image[0][j][i] != 0:
+                print(get_base_from_color(image[0][j][i]), end='')
+                if get_base_from_color(image[0][j][i]) == ' ':
+                    image_row.append([255, 255, 255, 255])
+                elif get_base_from_color(image[0][j][i]) == get_base_from_color(image[0][j][0]) and i > 0:
+                    image_row.append([255, 255, 255, 255])
+                elif get_base_from_color(image[0][j][i]) == 'A':
+                    image_row.append([0, 0, 255, 255])
+                elif get_base_from_color(image[0][j][i]) == 'C':
+                    image_row.append([255, 0, 0, 255])
+                elif get_base_from_color(image[0][j][i]) == 'G':
+                    image_row.append([0, 255, 0, 255])
+                elif get_base_from_color(image[0][j][i]) == 'T':
+                    image_row.append([255, 255, 0, 255])
+                else:
+                    # purple
+                    image_row.append([160, 32, 240, 255])
+            else:
+                print(' ', end='')
+                image_row.append([0, 0, 0, 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("base_tensor" + ".png", entire_image, format="PNG")
+
+
+def tensor_to_image(image):
+    # base_color, base_quality_color, map_qual_color, strand_color, alt_color
+    print("BASE CHANNEL:")
+    save_base_array(image)
+    save_base_quality_array(image)
+    save_map_quality_array(image)
+    save_strand_array(image)
+    save_alt_freq(image)
+
+
 if __name__ == '__main__':
     '''
     Processes arguments and performs tasks.
@@ -133,4 +242,7 @@ if __name__ == '__main__':
         for l in label:
             print(l, end='')
         print()
-        analyze_tensor(image)
+        # analyze_tensor(image)
+
+        tensor_to_image(image)
+
