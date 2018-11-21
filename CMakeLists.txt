@@ -8,6 +8,15 @@ set (CMAKE_C_FLAGS "-fPIC")
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+FIND_PACKAGE(PythonInterp 3 REQUIRED)
+FIND_PACKAGE(PythonLibs 3 REQUIRED)
+
+if (PYTHONINTERP_FOUND)
+    message("Python found")
+else()
+    message("Python not found")
+endif()
+
 # enable installing dependencies
 option(INSTALL_DEPENDENCIES
         "Install project dependencies"
