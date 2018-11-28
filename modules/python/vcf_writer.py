@@ -162,9 +162,9 @@ class VCFWriter:
             return 'conflictPos'
         if genotype == '0/0':
             return 'refCall'
-        if phred_qual < 3:
+        if phred_qual < 0:
             return 'lowQUAL'
-        if phred_gq < 3:
+        if phred_gq < 0:
             return 'lowGQ'
         return 'PASS'
 
