@@ -205,7 +205,7 @@ pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinde
         for(auto& candidate: AlleleMap[i]) {
             filtered_candidate_positions.insert(i + this->region_start);
             positional_candidates.push_back(make_pair(freq, candidate));
-            cout<<"CANDIDATE: "<<i+this->region_start<<" "<<candidate.allele.ref<<" "<<candidate.allele.alt<<" "<<candidate.allele.alt_type<<" "<<AlleleFrequencyMap[candidate]<<" "<<coverage[i]<<endl;
+//            cout<<"CANDIDATE: "<<i+this->region_start<<" "<<candidate.allele.ref<<" "<<candidate.allele.alt<<" "<<candidate.allele.alt_type<<" "<<AlleleFrequencyMap[candidate]<<" "<<coverage[i]<<endl;
         }
         if(positional_candidates.empty()) continue;
 
