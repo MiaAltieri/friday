@@ -165,7 +165,7 @@ class View:
                     for candidate_pos in range(window[0], window[1]):
                         confident_records.append(candidate_map[candidate_pos])
             # for a dry run, do not subset the windows
-            # confident_windows = sequence_windows
+            confident_windows = sequence_windows
 
             if not confident_windows:
                 return 0, 0, None, None
