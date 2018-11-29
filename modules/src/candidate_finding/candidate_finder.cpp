@@ -194,13 +194,13 @@ pair <set<long long>, map<long long, PositionalCandidateRecord>> CandidateFinder
                 AlleleFrequencyMap[candidate] >= CandidateFinder_options::min_count_threshold) {
                 filtered_candidate_positions.insert(i + this->region_start);
                 positional_candidates.push_back(make_pair(freq_can, candidate));
-                cout << "CANDIDATE: " << i + this->region_start << " " << candidate.allele.ref << " "
-                     << candidate.allele.alt << " " << candidate.allele.alt_type << " " << AlleleFrequencyMap[candidate]
-                     << " " << coverage[i] << " "<< freq_can << endl;
+//                cout << "CANDIDATE: " << i + this->region_start << " " << candidate.allele.ref << " "
+//                     << candidate.allele.alt << " " << candidate.allele.alt_type << " " << AlleleFrequencyMap[candidate]
+//                     << " " << coverage[i] << " "<< freq_can << endl;
             } else {
-                cout << "SKIPPED CANDIDATE: " << i + this->region_start << " " << candidate.allele.ref << " "
-                     << candidate.allele.alt << " " << candidate.allele.alt_type << " " << AlleleFrequencyMap[candidate]
-                     << " " << coverage[i] << " "<< freq_can << endl;
+//                cout << "SKIPPED CANDIDATE: " << i + this->region_start << " " << candidate.allele.ref << " "
+//                     << candidate.allele.alt << " " << candidate.allele.alt_type << " " << AlleleFrequencyMap[candidate]
+//                     << " " << coverage[i] << " "<< freq_can << endl;
             }
         }
         if (positional_candidates.empty()) continue;
