@@ -242,7 +242,7 @@ if __name__ == '__main__':
         for l in label:
             print(l, end='')
         print()
-        # analyze_tensor(image)
+        analyze_tensor(image)
 
-        tensor_to_image(image)
+        # tensor_to_image(image)
 

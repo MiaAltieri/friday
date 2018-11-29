@@ -298,31 +298,7 @@ vector<int> ImageGenerator::get_window_labels(pair<long long, long long> window)
         }
 
         PositionalCandidateRecord candidate = all_positional_candidates[pos];
-
-        int gt1 = Genotype::HOM, gt2 = Genotype::HOM;
-        for(auto &vcf_rec:pos_vcf[pos]) {
-            for(auto &alt: vcf_rec.alt_allele) {
-                if(alt.ref.compare(candidate.ref) == 0
-                   && alt.alt_allele.compare(candidate.alt1) == 0
-                   && alt.alt_type == candidate.alt1_type) {
-                    if(vcf_rec.genotype[0] == 1 && vcf_rec.genotype[1] == 1) {
-                        gt1 = Genotype::HOM_ALT;
-                    }else if(vcf_rec.genotype[0] == 1 || vcf_rec.genotype[1] == 1) {
-                        gt1 = Genotype::HET;
-                    }
-                }
-
-                if(alt.ref.compare(candidate.ref) == 0
-                   && alt.alt_allele.compare(candidate.alt2) == 0
-                   && alt.alt_type == candidate.alt2_type) {
-                    if(vcf_rec.genotype[0] == 2 && vcf_rec.genotype[1] == 2) {
-                        gt2 = Genotype::HOM_ALT;
-                    }else if(vcf_rec.genotype[0] == 2 || vcf_rec.genotype[1] == 2) {
-                        gt2 = Genotype::HET;
-                    }
-                }
-            }
-        }
+        int gt1 = candidate.alt1_gt, gt2 = candidate.alt2_gt;
         window_label.push_back(get_image_label(gt1, gt2));
     }
 

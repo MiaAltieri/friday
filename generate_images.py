@@ -16,6 +16,7 @@ from modules.python.TsvHandler import TsvHandler
 from modules.python.FileManager import FileManager
 from modules.python.PileupGenerator import PileupGenerator
 from modules.python.Options import ImageSizeOptions
+from modules.python.CandidateLabler import CandidateLabeler
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
 - Find candidates that can be variants
@@ -83,6 +84,23 @@ class View:
 
         return intervals_chromosomal_reference
 
+    def get_labeled_candidate_sites(self, selected_candidate_list, start_pos, end_pos, filter_hom_ref=False):
+        """
+        Lable selected candidates of a region and return a list of records
+        :param selected_candidate_list: List of all selected candidates with their alleles
+        :param start_pos: start position of the region
+        :param end_pos: end position of the region
+        :param filter_hom_ref: whether to ignore hom_ref VCF records during candidate validation
+        :return: labeled_sites: Labeled candidate sites. Each containing proper genotype.
+        """
+        candidate_labler = CandidateLabeler(self.fasta_path, self.vcf_path)
+        labeled_candidates = candidate_labler.get_labeled_candidates(self.chromosome_name,
+                                                                     start_pos,
+                                                                     end_pos,
+                                                                     selected_candidate_list)
+        del candidate_labler
+        return labeled_candidates
+
     @staticmethod
     def overlap_length_between_ranges(range_a, range_b):
         return max(0, (min(range_a[1], range_b[1]) - max(range_a[0], range_b[0])))
@@ -138,15 +156,25 @@ class View:
                 return 0, 0, None, None
 
             confident_windows = []
+            confident_records = []
             for window in sequence_windows:
                 for interval in confident_intervals_in_region:
                     if self.a_fully_contains_range_b(interval, window):
                         confident_windows.append(window)
+
+                    for candidate_pos in range(window[0], window[1]):
+                        confident_records.append(candidate_map[candidate_pos])
             # for a dry run, do not subset the windows
             # confident_windows = sequence_windows
 
             if not confident_windows:
                 return 0, 0, None, None
+
+            labeled_sites = self.get_labeled_candidate_sites(confident_records, start_position, end_position, True)
+
+            for labeled_site in labeled_sites:
+                candidate_map[labeled_site.pos] = labeled_site
+            del labeled_sites
 
             pileup_images = image_generator.generate_pileup(reads,
                                                             confident_windows,
