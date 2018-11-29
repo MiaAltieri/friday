@@ -187,13 +187,13 @@ pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinde
         vector< pair<double, Candidate> > positional_candidates;
 
         int freq = 0;
-        double mismatch_count = 0;
+        int mismatch_count = 0;
         for(auto& candidate: AlleleMap[i]) {
-            if(coverage[i] > 0)
-                mismatch_count += (double) AlleleFrequencyMap[candidate];
+            mismatch_count += AlleleFrequencyMap[candidate];
         }
 
-        freq = (int)ceil(100.0 *  ((double) mismatch_count / (double) coverage[i]));
+        if(coverage[i] > 0)
+            freq = (int) ceil(100.0 *  ((double) mismatch_count / (double) coverage[i]));
         if(freq < CandidateFinder_options::freq_threshold ||
            mismatch_count < CandidateFinder_options::min_count_threshold){
 //            for(auto& candidate: AlleleMap[i])
