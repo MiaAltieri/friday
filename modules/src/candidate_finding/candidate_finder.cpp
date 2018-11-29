@@ -194,8 +194,7 @@ pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinde
 
         if(coverage[i] > 0)
             freq = (int) ceil(100.0 *  ((double) mismatch_count / (double) coverage[i]));
-        if(freq < CandidateFinder_options::freq_threshold ||
-           mismatch_count < CandidateFinder_options::min_count_threshold){
+        if(freq < CandidateFinder_options::freq_threshold){
 //            for(auto& candidate: AlleleMap[i])
 //                cout<<"SKIPPED CANDIDATE: "<<i+this->region_start<<" "<<candidate.allele.ref<<" " <<candidate.allele.alt<<" "<<candidate.allele.alt_type<<" "<<AlleleFrequencyMap[candidate]<<" "<<coverage[i] << " " <<freq<<endl;
 
@@ -207,8 +206,7 @@ pair<set<long long>, map<long long, PositionalCandidateRecord>  > CandidateFinde
             if(coverage[i] > 0)
                 freq_can = (int)ceil(100.0 *  ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]));
 
-            if(AlleleFrequencyMap[candidate] > CandidateFinder_options::min_count_threshold &&
-               freq_can >= CandidateFinder_options::freq_threshold) {
+            if(AlleleFrequencyMap[candidate] >= CandidateFinder_options::min_count_threshold) {
                 filtered_candidate_positions.insert(i + this->region_start);
                 positional_candidates.push_back(make_pair(freq_can, candidate));
             }
