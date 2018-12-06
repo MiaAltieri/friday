@@ -22,7 +22,7 @@ Input:
 Return:
 - A trained model
 """
-CLASS_WEIGHTS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+CLASS_WEIGHTS = [2.0, 1.0, 2.0, 10.0, 10.0, 4.0]
 
 
 def save_best_model(encoder_model, decoder_model, encoder_optimizer, decoder_optimizer, hidden_size, layers, epoch,
@@ -226,7 +226,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
             confusion_matrix_logger.flush()
         else:
             # this setup is for hyperband
-            if epoch + 1 >= 5 and stats['accuracy'] < 80:
+            if epoch + 1 >= 2 and stats['accuracy'] < 90:
                 sys.stderr.write(TextColor.PURPLE + 'EARLY STOPPING AS THE MODEL NOT DOING WELL\n' + TextColor.END)
                 return encoder_model, decoder_model, encoder_optimizer, decoder_optimizer, stats
 
