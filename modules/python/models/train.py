@@ -2,12 +2,12 @@ import sys
 import torch
 import torch.nn as nn
 import os
-from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
 
 # Custom generator for our dataset
 from torch.utils.data import DataLoader
+from modules.python.models.data_sampler import BalancedSampler
 from modules.python.models.dataloader import SequenceDataset
 from modules.python.TextColor import TextColor
 from modules.python.models.ModelHander import ModelHandler
@@ -22,7 +22,7 @@ Input:
 Return:
 - A trained model
 """
-CLASS_WEIGHTS = [2.0, 1.0, 2.0, 10.0, 10.0, 4.0]
+CLASS_WEIGHTS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 
 def save_best_model(encoder_model, decoder_model, encoder_optimizer, decoder_optimizer, hidden_size, layers, epoch,
@@ -67,7 +67,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
     train_data_set = SequenceDataset(train_file)
     train_loader = DataLoader(train_data_set,
                               batch_size=batch_size,
-                              shuffle=True,
+                              sampler=BalancedSampler(train_file),
                               num_workers=num_workers,
                               pin_memory=gpu_mode)
     if retrain_model is True:

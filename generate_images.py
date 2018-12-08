@@ -257,6 +257,10 @@ def chromosome_level_parallelization(chr_list,
 
         smry = None
         image_file_name = image_path + chr_name + "_" + str(thread_id) + ".h5py"
+
+        # save the dictionary
+        dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + ".pkl"
+
         if intervals:
             smry = open(output_path + chr_name + "_" + str(thread_id) + "_summary.csv", 'w')
 
@@ -265,6 +269,8 @@ def chromosome_level_parallelization(chr_list,
         total_windows = 0
         all_images = []
         all_labels = []
+        global_dictionary = dict()
+        
         global_index = 0
         for interval in intervals:
             _start, _end = interval
@@ -274,11 +280,8 @@ def chromosome_level_parallelization(chr_list,
 
             if not images or not candidate_map:
                 continue
-            # save the dictionary
-            dictionary_file_path = image_path + chr_name + "_" + str(_start) + "_" + str(_end) + "_" + str(thread_id) \
-                                   + ".pkl"
-            with open(dictionary_file_path, 'wb') as f:
-                pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+
+            global_dictionary.update(candidate_map)
 
             # save the images
             for i, image in enumerate(images):
@@ -293,8 +296,13 @@ def chromosome_level_parallelization(chr_list,
                     # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
 
                 # write in summary file
-                summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
-                                 ' '.join(map(str, record)) + "\n"
+                if train_mode:
+                    # write in summary file
+                    summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
+                                     ' '.join(map(str, record)) + "," + ''.join(map(str, image.label)) + "\n"
+                else:
+                    summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
+                                     ' '.join(map(str, record)) + "\n"
                 smry.write(summary_string)
                 global_index += 1
 
@@ -309,6 +317,9 @@ def chromosome_level_parallelization(chr_list,
         img_dset[...] = all_images
         label_dataset[...] = all_labels
         hdf5_file.close()
+
+        with open(dictionary_file_path, 'wb') as f:
+            pickle.dump(global_dictionary, f, pickle.HIGHEST_PROTOCOL)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,

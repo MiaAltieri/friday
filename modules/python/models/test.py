@@ -4,7 +4,6 @@ from tqdm import tqdm
 import torchnet.meter as meter
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchvision import transforms
 import numpy as np
 from modules.python.models.dataloader import SequenceDataset
 from modules.python.TextColor import TextColor
@@ -19,7 +18,7 @@ Input:
 Returns:
 - Loss value
 """
-CLASS_WEIGHTS = [2.0, 1.0, 2.0, 10.0, 10.0, 4.0]
+CLASS_WEIGHTS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 
 def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_workers, gru_layers, hidden_size,
