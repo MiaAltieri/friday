@@ -269,8 +269,8 @@ def chromosome_level_parallelization(chr_list,
         total_windows = 0
         all_images = []
         all_labels = []
-        global_dictionary = dict()
-        
+        global_dictionary = {}
+
         global_index = 0
         for interval in intervals:
             _start, _end = interval
