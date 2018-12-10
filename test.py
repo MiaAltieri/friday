@@ -43,7 +43,7 @@ def do_test(test_file, batch_size, gpu_mode, num_workers, model_path, num_classe
         ModelHandler.load_model_for_training(model_path,
                                              input_channels=ImageSizeOptions.IMAGE_CHANNELS,
                                              seq_len=seq_len,
-                                             num_classes=6)
+                                             num_classes=ImageSizeOptions.TOTAL_LABELS)
 
     sys.stderr.write(TextColor.GREEN + "INFO: MODEL LOADED\n" + TextColor.END)
 

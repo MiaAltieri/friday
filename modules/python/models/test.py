@@ -22,7 +22,7 @@ CLASS_WEIGHTS = [0.1, 0.1, 0.1, 1.0, 1.0, 0.1]
 
 
 def test(data_file, batch_size, gpu_mode, encoder_model, decoder_model, num_workers, gru_layers, hidden_size,
-         num_classes=6):
+         num_classes=ImageSizeOptions.TOTAL_LABELS):
     # transformations = transforms.Compose([transforms.ToTensor()])
 
     # data loader

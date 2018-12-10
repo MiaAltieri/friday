@@ -71,9 +71,9 @@ def predict(test_file, batch_size, model_path, gpu_mode, num_workers):
     # load the model
     encoder_model, decoder_model, hidden_size, gru_layers, prev_ite = \
         ModelHandler.load_model_for_training(model_path,
-                                             input_channels=5,
+                                             input_channels=ImageSizeOptions.IMAGE_CHANNELS,
                                              seq_len=ImageSizeOptions.SEQ_LENGTH,
-                                             num_classes=6)
+                                             num_classes=ImageSizeOptions.TOTAL_LABELS)
     hidden_size = 512
     gru_layers = 3
 
