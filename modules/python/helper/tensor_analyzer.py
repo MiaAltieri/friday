@@ -44,7 +44,8 @@ def get_alt_type(alt_type_color):
 
 def get_base_from_color(base_color):
     color = int(math.ceil(base_color))
-    global_base_color_reverse = {250: 'A', 30: 'C', 180: 'G', 100: 'T', 5: 'N', 10: '.', 20: '*'}
+    global_base_color_reverse = {200: 'A', 50: 'C', 150: 'G', 100: 'T', 10: '.', 250: '*'}
+    # {{'C', 50}, {'T', 100}, {'G', 150}, {'A', 200}, {'*', 250}, {'.', 10}, {'N', 10}};
     if color in global_base_color_reverse:
         return global_base_color_reverse[color]
     else:
@@ -63,6 +64,21 @@ def get_quality_by_color(quality):
     if color == 0:
         return ' '
     return str(color)
+
+
+def get_mismatch_or_alt_color(alt_type_color):
+    """
+    Get color for forward and reverse reads
+    :param is_rev: True if read is reversed
+    :return:
+    """
+    alt_type_color = int(math.ceil(alt_type_color))
+    if alt_type_color == 0:
+        return ' '
+    elif alt_type_color == 50:
+        return '0'
+    elif alt_type_color == 250:
+        return '1'
 
 
 def analyze_tensor(image):
@@ -91,10 +107,20 @@ def analyze_tensor(image):
         for j in range(img_w):
             print(get_strand_color(image[3][j][i]), end='')
         print()
-    print("ALT FREQ CHANNEL:")
+    print("MISMATCH CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
-            print(get_alt_type(image[4][j][i]), end='')
+            print(get_mismatch_or_alt_color(image[4][j][i]), end='')
+        print()
+    print("ALT1 CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_mismatch_or_alt_color(image[5][j][i]), end='')
+        print()
+    print("ALT2 CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_mismatch_or_alt_color(image[6][j][i]), end='')
         print()
 
 
@@ -106,7 +132,7 @@ def save_base_quality_array(image):
     for i in range(img_h):
         image_row = []
         for j in range(img_w):
-                image_row.append([image[1][j][i], 0, 0, 255])
+            image_row.append([image[1][j][i], 0, 0, 255])
         entire_image.append(image_row)
         print()
     entire_image = np.array(entire_image)

@@ -16,7 +16,7 @@ class CandidateFinderOptions(object):
 
 class ImageSizeOptions(object):
     IMAGE_HEIGHT = 100
-    IMAGE_CHANNELS = 5
+    IMAGE_CHANNELS = 7
     MIN_BASES_ON_LEFT = 0
     BASES_ON_RIGHT = 1
     CONTEXT_SIZE = 10
