@@ -40,8 +40,11 @@ class LocalAssembler:
     def perform_local_alignment(self, region_with_reads):
         if not region_with_reads.reads:
             return []
-        ref_start = min(region_with_reads.min_read_start, region_with_reads.region_start) - AlingerOptions.ALIGNMENT_SAFE_BASES
-        ref_end = max(region_with_reads.max_read_end, region_with_reads.region_end) + AlingerOptions.ALIGNMENT_SAFE_BASES
+        # ref_start = min(region_with_reads.min_read_start, region_with_reads.region_start) - AlingerOptions.ALIGNMENT_SAFE_BASES
+        # ref_end = max(region_with_reads.max_read_end, region_with_reads.region_end) + AlingerOptions.ALIGNMENT_SAFE_BASES
+
+        ref_start = region_with_reads.region_start - AlingerOptions.ALIGNMENT_SAFE_BASES
+        ref_end = region_with_reads.region_end + AlingerOptions.ALIGNMENT_SAFE_BASES
 
         if ref_end <= region_with_reads.region_end:
             return region_with_reads.reads
