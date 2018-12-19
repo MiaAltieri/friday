@@ -4,8 +4,8 @@ import torch.nn.functional as F
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=(1, 3), stride=stride,
-                     padding=(0, 1), bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
 
 
 class BasicConv2d(nn.Module):
@@ -60,8 +60,8 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=(1, 3), stride=stride,
-                               padding=(0, 1), bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
+                               padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
@@ -98,8 +98,8 @@ class ResNet(nn.Module):
         self.inplanes = 80
         super(ResNet, self).__init__()
         self.Context_Conv2d_0a = BasicConv2d(in_channels, 14, kernel_size=(1, 3), padding=(0, 1), groups=in_channels)
-        self.Context_Conv2d_0b = BasicConv2d(14, 28, kernel_size=(1, 5), padding=(0, 2), stride=(1, 2), groups=14)
-        self.Context_Conv2d_0c = BasicConv2d(28, 56, kernel_size=(1, 7), padding=(0, 3), groups=28)
+        self.Context_Conv2d_0b = BasicConv2d(14, 28, kernel_size=(1, 3), padding=(0, 1), stride=(1, 2), groups=14)
+        self.Context_Conv2d_0c = BasicConv2d(28, 56, kernel_size=(1, 3), padding=(0, 1), groups=28)
         self.Conv2d_1a_3x3 = BasicConv2d(56, 80, kernel_size=(1, 3), padding=0, stride=(1, 2))
 
         # self.Context_Conv2d_0a = BasicConv2d(in_channels, 20, kernel_size=3, padding=(1, 0), groups=in_channels)
