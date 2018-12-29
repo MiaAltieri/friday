@@ -110,7 +110,7 @@ class View:
         if range_b[0] >= range_a[0] and range_b[1] <= range_a[1]: return True
         return False
 
-    def parse_region(self, start_position, end_position):
+    def parse_region(self, start_position, end_position, local_alignment_flag):
         """
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
@@ -125,7 +125,7 @@ class View:
                                          start_position,
                                          end_position)
 
-        reads = local_assembler.perform_local_assembly(self.downsample_rate)
+        reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
 
         if not reads:
             return 0, 0, None, None
@@ -221,6 +221,7 @@ def chromosome_level_parallelization(chr_list,
                                      thread_id,
                                      train_mode,
                                      downsample_rate,
+                                     local_alignment_flag,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -274,7 +275,9 @@ def chromosome_level_parallelization(chr_list,
         global_index = 0
         for interval in intervals:
             _start, _end = interval
-            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
+                                                                          end_position=_end,
+                                                                          local_alignment_flag=local_alignment_flag)
             total_reads_processed += n_reads
             total_windows += n_windows
 
@@ -496,6 +499,12 @@ if __name__ == '__main__':
         default=1.0,
         help="Reference corresponding to the BAM file."
     )
+    parser.add_argument(
+        "--local_alignment",
+        type=boolean_string,
+        default=True,
+        help="If true then perform local alignment."
+    )
     FLAGS, unparsed = parser.parse_known_args()
     chr_list = get_chromosme_list(FLAGS.chromosome_name)
     # if the confident bed is not empty then create the tree
@@ -519,5 +528,6 @@ if __name__ == '__main__':
                                      FLAGS.threads,
                                      FLAGS.thread_id,
                                      FLAGS.train_mode,
-                                     FLAGS.downsample_rate)
+                                     FLAGS.downsample_rate,
+                                     FLAGS.local_alignment)
 
