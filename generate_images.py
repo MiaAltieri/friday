@@ -221,6 +221,7 @@ def chromosome_level_parallelization(chr_list,
                                      thread_id,
                                      train_mode,
                                      downsample_rate,
+                                     local_alignment,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -266,7 +267,9 @@ def chromosome_level_parallelization(chr_list,
 
         for interval in intervals:
             _start, _end = interval
-            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
+            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
+                                                                          end_position=_end,
+                                                                          local_alignment_flag=local_alignment)
             total_reads_processed += n_reads
             total_windows += n_windows
 
