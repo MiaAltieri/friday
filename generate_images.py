@@ -221,7 +221,6 @@ def chromosome_level_parallelization(chr_list,
                                      thread_id,
                                      train_mode,
                                      downsample_rate,
-                                     local_alignment_flag,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -257,10 +256,6 @@ def chromosome_level_parallelization(chr_list,
                     downsample_rate=downsample_rate)
 
         smry = None
-        image_file_name = image_path + chr_name + "_" + str(thread_id) + ".h5py"
-
-        # save the dictionary
-        dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + ".pkl"
 
         if intervals:
             smry = open(output_path + chr_name + "_" + str(thread_id) + "_summary.csv", 'w')
@@ -268,23 +263,23 @@ def chromosome_level_parallelization(chr_list,
         start_time = time.time()
         total_reads_processed = 0
         total_windows = 0
-        all_images = []
-        all_labels = []
-        global_dictionary = {}
 
-        global_index = 0
         for interval in intervals:
             _start, _end = interval
-            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
-                                                                          end_position=_end,
-                                                                          local_alignment_flag=local_alignment_flag)
+            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start, end_position=_end)
             total_reads_processed += n_reads
             total_windows += n_windows
 
             if not images or not candidate_map:
                 continue
 
-            global_dictionary.update(candidate_map)
+            all_images = []
+            all_labels = []
+            image_file_name = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".h5py"
+
+            # save the dictionary
+            dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".pkl"
+            global_index = 0
 
             # save the images
             for i, image in enumerate(images):
@@ -309,20 +304,29 @@ def chromosome_level_parallelization(chr_list,
                 smry.write(summary_string)
                 global_index += 1
 
-        hdf5_file = h5py.File(image_file_name, mode='w')
-        # the image dataset we save. The index name in h5py is "images".
-        img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
-                                                                            ImageSizeOptions.SEQ_LENGTH,
-                                                                            ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
-                                            compression='gzip')
-        label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
-        # save the images and labels to the h5py file
-        img_dset[...] = all_images
-        label_dataset[...] = all_labels
-        hdf5_file.close()
+            hdf5_file = h5py.File(image_file_name, mode='w')
+            # the image dataset we save. The index name in h5py is "images".
+            img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+                                                                                ImageSizeOptions.SEQ_LENGTH,
+                                                                                ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
+                                                compression='gzip')
+            label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
+            # save the images and labels to the h5py file
+            img_dset[...] = all_images
+            label_dataset[...] = all_labels
+            hdf5_file.close()
 
-        with open(dictionary_file_path, 'wb') as f:
-            pickle.dump(global_dictionary, f, pickle.HIGHEST_PROTOCOL)
+            with open(dictionary_file_path, 'wb') as f:
+                pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+
+            del all_images, all_labels, candidate_map
+
+            # print("CHROMOSOME: ", chr_name,
+            #       "INTERVAL: ", interval,
+            #       "READS: ", n_reads,
+            #       "WINDOWS: ", n_windows,
+            #       "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+            #       math.ceil(time.time()-start_time) % 60, "SEC")
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
