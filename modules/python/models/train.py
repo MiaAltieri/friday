@@ -67,7 +67,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
     train_data_set = SequenceDataset(train_file)
     train_loader = DataLoader(train_data_set,
                               batch_size=batch_size,
-                              shuffle=True,
+                              shuffle=False,
                               num_workers=num_workers,
                               pin_memory=gpu_mode)
     if retrain_model is True:

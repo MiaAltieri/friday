@@ -33,17 +33,34 @@ samtools index -@ 40 -b HG001_GRCh37_pfda.bam
 
 ### DeepVariant evaluation
 ### FROM HERE ### https://github.com/google/deepvariant/blob/master/docs/deepvariant-quick-start.md
-BIN_VERSION="0.7.0"
-MODEL_VERSION="0.7.0"
+# DOWNLOAD THE MODEL
+BIN_VERSION="0.7.2"
+MODEL_VERSION="0.7.2"
 
-OUTPUT_DIR=/data/users/kishwar/deepvariant_outputs/HG001
-mkdir -p "${OUTPUT_DIR}"
-REF=/data/users/common/precisionFDA/GRCH37/human_g1k_v37.fasta
-BAM=/data/users/common/precisionFDA/HG001/bam/HG001_GRCh37_pfda.bam
-MODEL=/home/kishwar/DeepVariant-inception_v3-0.7.0+data-wgs_standard/model.ckpt
+
+cd /data/users/common/dv_model/
+MODEL_NAME="DeepVariant-inception_v3-${MODEL_VERSION}+data-wgs_standard"
+MODEL_HTTP_DIR="https://storage.googleapis.com/deepvariant/models/DeepVariant/${MODEL_VERSION}/${MODEL_NAME}"
+mkdir -p ${MODEL_NAME}
+wget -P ${MODEL_NAME} ${MODEL_HTTP_DIR}/model.ckpt.data-00000-of-00001
+wget -P ${MODEL_NAME} ${MODEL_HTTP_DIR}/model.ckpt.index
+wget -P ${MODEL_NAME} ${MODEL_HTTP_DIR}/model.ckpt.meta
+
+
+# RUN DEEPVARIANT
+OUTPUT_DIR=/data/users/kishwar/deepvariant_outputs/examples/pfda_HG001_grch37
+VCF_OUTPUT_DIR=/data/users/kishwar/deepvariant_outputs/vcf_outputs
+FINAL_OUTPUT_VCF="${VCF_OUTPUT_DIR}/pfda_HG001_GRCh37.vcf.gz"
+
+REF=/data/users/common/ref/GRCh37/human_g1k_v37.fasta
+BAM=/data/users/common/bam/precision_fda/pfda_HG001_GRCh37.bam
+MODEL=/data/users/common/dv_model/DeepVariant-inception_v3-0.7.2+data-wgs_standard/model.ckpt
 
 # create images
-LOGDIR=/home/${USER}/logs
+LOGDIR=/data/users/kishwar/deepvariant_outputs/logs
+
+mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${LOGDIR}"
 N_SHARDS=32
 
 sudo docker pull gcr.io/deepvariant-docker/deepvariant:"${BIN_VERSION}"
@@ -61,10 +78,10 @@ time seq 0 $((N_SHARDS-1)) | \
     --reads "${BAM}" \
     --sample_name "NA12878" \
     --examples "${OUTPUT_DIR}/examples.tfrecord@${N_SHARDS}.gz" \
-    --regions '"19"' \
     --task {}
 
 CALL_VARIANTS_OUTPUT="${OUTPUT_DIR}/call_variants_output.tfrecord.gz"
+
 
 sudo docker run \
   -v /home/${USER}:/home/${USER} \
@@ -75,9 +92,9 @@ sudo docker run \
  --examples "${OUTPUT_DIR}/examples.tfrecord@${N_SHARDS}.gz" \
  --checkpoint "${MODEL}"
 
- FINAL_OUTPUT_VCF="${OUTPUT_DIR}/HG001_GRCh37_pfda.vcf.gz"
 
- sudo docker run \
+
+sudo docker run \
    -v /data/:/data/ \
    -v /home/${USER}:/home/${USER} \
    gcr.io/deepvariant-docker/deepvariant:"${BIN_VERSION}" \

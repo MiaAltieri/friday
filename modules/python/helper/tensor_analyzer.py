@@ -85,7 +85,7 @@ def analyze_tensor(image):
     # base_color, base_quality_color, map_qual_color, strand_color, alt_color
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 50
+    img_h = 100
     print("BASE CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
@@ -127,12 +127,12 @@ def analyze_tensor(image):
 def save_base_quality_array(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 10
+    img_h = 100
     entire_image = []
     for i in range(img_h):
         image_row = []
         for j in range(img_w):
-            image_row.append([image[1][j][i], 0, 0, 255])
+            image_row.append([0, 0, image[1][j][i], 255])
         entire_image.append(image_row)
         print()
     entire_image = np.array(entire_image)
@@ -143,7 +143,7 @@ def save_base_quality_array(image):
 def save_map_quality_array(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 10
+    img_h = 100
     entire_image = []
     for i in range(img_h):
         image_row = []
@@ -159,7 +159,7 @@ def save_map_quality_array(image):
 def save_strand_array(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 10
+    img_h = 100
     entire_image = []
     for i in range(img_h):
         image_row = []
@@ -172,26 +172,58 @@ def save_strand_array(image):
     misc.imsave("strand_color_tensor" + ".png", entire_image, format="PNG")
 
 
-def save_alt_freq(image):
+def save_mismatch(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 10
+    img_h = 100
     entire_image = []
     for i in range(img_h):
         image_row = []
         for j in range(img_w):
-            image_row.append([0, 0, image[4][j][i], 255])
+            image_row.append([0, image[4][j][i], 0, 255])
         entire_image.append(image_row)
         print()
     entire_image = np.array(entire_image)
     from scipy import misc
-    misc.imsave("alt_freq_tensor" + ".png", entire_image, format="PNG")
+    misc.imsave("mismatch_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_alt1(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 100
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            image_row.append([image[5][j][i], 0, 0, 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("alt1_freq_tensor" + ".png", entire_image, format="PNG")
+
+
+def save_alt2(image):
+    img_c, img_w, img_h = image.size()
+    image = np.array(image.data * 254)
+    img_h = 100
+    entire_image = []
+    for i in range(img_h):
+        image_row = []
+        for j in range(img_w):
+            image_row.append([0, 0, image[6][j][i], 255])
+        entire_image.append(image_row)
+        print()
+    entire_image = np.array(entire_image)
+    from scipy import misc
+    misc.imsave("alt2_freq_tensor" + ".png", entire_image, format="PNG")
 
 
 def save_base_array(image):
     img_c, img_w, img_h = image.size()
     image = np.array(image.data * 254)
-    img_h = 10
+    img_h = 100
     entire_image = []
     for i in range(img_h):
         image_row = []
@@ -200,8 +232,8 @@ def save_base_array(image):
                 print(get_base_from_color(image[0][j][i]), end='')
                 if get_base_from_color(image[0][j][i]) == ' ':
                     image_row.append([255, 255, 255, 255])
-                elif get_base_from_color(image[0][j][i]) == get_base_from_color(image[0][j][0]) and i > 0:
-                    image_row.append([255, 255, 255, 255])
+                # elif get_base_from_color(image[0][j][i]) == get_base_from_color(image[0][j][0]) and i > 0:
+                #     image_row.append([255, 255, 255, 255])
                 elif get_base_from_color(image[0][j][i]) == 'A':
                     image_row.append([0, 0, 255, 255])
                 elif get_base_from_color(image[0][j][i]) == 'C':
@@ -230,7 +262,9 @@ def tensor_to_image(image):
     save_base_quality_array(image)
     save_map_quality_array(image)
     save_strand_array(image)
-    save_alt_freq(image)
+    save_mismatch(image)
+    save_alt1(image)
+    save_alt2(image)
 
 
 if __name__ == '__main__':
@@ -268,7 +302,7 @@ if __name__ == '__main__':
         for l in label:
             print(l, end='')
         print()
-        analyze_tensor(image)
+        # analyze_tensor(image)
 
-        # tensor_to_image(image)
+        tensor_to_image(image)
 
