@@ -69,7 +69,7 @@ def train(train_file, test_file, batch_size, epoch_limit, gpu_mode, num_workers,
                               batch_size=batch_size,
                               shuffle=True,
                               num_workers=num_workers,
-                              pin_memory=gpu_mode)
+                              pin_memory=False)
     if retrain_model is True:
         if os.path.isfile(retrain_model_path) is False:
             sys.stderr.write(TextColor.RED + "ERROR: INVALID PATH TO RETRAIN PATH MODEL --retrain_model_path\n")

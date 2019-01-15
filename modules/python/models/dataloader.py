@@ -35,18 +35,16 @@ class SequenceDataset(Dataset):
         # load the image
         hdf5_image = self.file_info[index]
         hdf5_index = int(self.file_index[index])
-        # hdf5_file = h5py.File(hdf5_image, 'r')
 
-        with h5py.File(hdf5_image, 'r') as hdf5_file:
-            image = hdf5_file['images'][hdf5_index]
-            label = hdf5_file['labels'][hdf5_index]
+        hdf5_file = h5py.File(hdf5_image, 'r')
+        image = hdf5_file['images'][hdf5_index]
+        label = hdf5_file['labels'][hdf5_index]
+        hdf5_file.close()
 
-        # image_dataset = hdf5_file['images']
-        # image = np.array(image_dataset[hdf5_index], dtype=np.uint8)
+        image = np.array(image, dtype=np.uint8)
         image = self.transform(image)
         image = image.transpose(1, 2)
 
-        # label_dataset = hdf5_file['labels']
         label = np.array(label, dtype=np.long)
         label = torch.from_numpy(label).type(torch.LongTensor)
 
