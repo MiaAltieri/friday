@@ -40,14 +40,14 @@ class VCFWriter:
 
     @staticmethod
     def get_qual_and_gq(probabilities, predicted_class):
-        qual = 1.0 - probabilities[0]
+        qual = 1.0 - probabilities[predicted_class]
         phred_qual = min(60, -10 * np.log10(1 - qual) if 1 - qual >= 0.0000001 else 60)
         phred_qual = math.ceil(phred_qual * 100.0) / 100.0
 
         gq = probabilities[predicted_class]
         phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
         phred_gq = math.ceil(phred_gq * 100.0) / 100.0
-        return phred_gq, phred_qual
+        return phred_qual, phred_gq
 
     @staticmethod
     def solve_multiple_alts(alts, ref):
