@@ -47,6 +47,7 @@ class VCFWriter:
         gq = probabilities[predicted_class]
         phred_gq = min(60, -10 * np.log10(1 - gq) if 1 - gq >= 0.0000001 else 60)
         phred_gq = math.ceil(phred_gq * 100.0) / 100.0
+        print(phred_qual, phred_gq)
         return phred_qual, phred_gq
 
     @staticmethod
