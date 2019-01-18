@@ -143,6 +143,8 @@ def predict(test_file, batch_size, model_path, gpu_mode, num_workers):
 def get_record_from_prediction(pos, positional_record):
     predictions = prediction_dict[pos]
     genotype, qual, gq = VCFWriter.process_prediction(pos, predictions)
+    print(predictions)
+    print(genotype, qual, gq)
     return positional_record, genotype, qual, gq
 
 
