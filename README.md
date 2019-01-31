@@ -1,5 +1,5 @@
 # FRIDAY
-RELEASE 0
+
 [![Build Status](https://travis-ci.com/kishwarshafin/friday.svg?branch=friday_v0)](https://travis-ci.com/kishwarshafin/friday)<br/>
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/kishwarshafin/friday/blob/master/LICENSE)
 
