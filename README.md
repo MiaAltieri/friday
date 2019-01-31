@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/kishwarshafin/friday.svg?branch=friday_v0)](https://travis-ci.com/kishwarshafin/friday)<br/>
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/kishwarshafin/friday/blob/master/LICENSE)
 
-FRIDAY is the genomic variant analysis tool that uses machine translation based deep neural networks to call variants on next-generation sequencing technology. The module is curated to apply deep neural networks in third generation long read sequencing technology like the Oxford Nanopore.
+FRIDAY is the genomic variant analysis tool that uses machine translation based deep neural networks to call variants on next-generation sequencing technology.
 
 ## Documentation
 Still in development
