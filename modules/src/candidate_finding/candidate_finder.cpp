@@ -28,9 +28,6 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
     long long reference_index, region_index;
 //    cout<<CIGAR_OPERATIONS::SOFT_CLIP<<" "<<CIGAR_OPERATIONS::IN<<endl;
 //    cout<<read.pos<<" "<<read.pos_end<<endl;
-//    if(read.pos <= 52608370 && read.pos_end >= 52608370) {
-//        cout<<"THIS READ"<<endl;
-//    }
 //    for (auto &cigar: read.cigar_tuples) {
 //
 //        cout<<"("<<cigar.operation<<", "<<cigar.length<<"), ";
@@ -90,8 +87,8 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                     // process insert allele here
                     string ref = reference_sequence.substr(reference_index, 1);
                     string alt;
-                    if (read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, cigar.length + 1);
-                    else alt = ref + read.sequence.substr(read_index, cigar.length);
+//                    if (read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, cigar.length + 1);
+                    alt = ref + read.sequence.substr(read_index, cigar.length);
 
                     Candidate candidate_alt(ref_position - 1, ref_position, ref, alt, AlleleType::INSERT_ALLELE);
                     if (AlleleFrequencyMap.find(candidate_alt) != AlleleFrequencyMap.end()) {
