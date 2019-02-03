@@ -23,7 +23,7 @@ namespace Aligner_options {
     static constexpr int match = 4;
     static constexpr int mismatch = 6;
     static constexpr int gap_open_penalty = 8;
-    static constexpr int gap_extend_penalty = 1;
+    static constexpr int gap_extend_penalty = 2;
     static constexpr int max_number_of_mismatches = 2;
 };
 
@@ -156,7 +156,7 @@ class ReadAligner {
     vector<string> read_sequences;
     vector<string> haplotypes;
     int kmer_size = 32;
-    float similarity_threshold = 0.85;
+    float similarity_threshold = 0.17;
     double alignment_score_threshold;
     unordered_map<string, vector<KmerMap> > KmerIndexMap;
     vector<HaplotypeReadsAlignment> read_to_haplotype_alignments;

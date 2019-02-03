@@ -28,7 +28,11 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
     long long reference_index, region_index;
 //    cout<<CIGAR_OPERATIONS::SOFT_CLIP<<" "<<CIGAR_OPERATIONS::IN<<endl;
 //    cout<<read.pos<<" "<<read.pos_end<<endl;
+//    if(read.pos <= 52608370 && read.pos_end >= 52608370) {
+//        cout<<"THIS READ"<<endl;
+//    }
 //    for (auto &cigar: read.cigar_tuples) {
+//
 //        cout<<"("<<cigar.operation<<", "<<cigar.length<<"), ";
 //    }
 //    cout<<endl;
@@ -128,10 +132,10 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                         AlleleMap[region_index].insert(candidate_alt);
                 }
 
-                if (ref_position >= region_start && ref_position <= region_end) {
-                    for (long long pos = ref_position; pos <= min(region_end, ref_position + cigar.length); pos++)
-                        coverage[pos - region_start] += 1;
-                }
+//                if (ref_position >= region_start && ref_position <= region_end) {
+//                    for (long long pos = ref_position; pos <= min(region_end, ref_position + cigar.length); pos++)
+//                        coverage[pos - region_start] += 1;
+//                }
 
                 ref_position += cigar.length;
                 break;
