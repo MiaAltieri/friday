@@ -10,7 +10,7 @@ class ActiveRegionOptions(object):
 class CandidateFinderOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 10
-    MIN_MAP_QUALITY = 10
+    MIN_MAP_QUALITY = 15
     SAFE_BASES = 50
 
 
