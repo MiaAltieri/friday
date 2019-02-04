@@ -158,21 +158,21 @@ class View:
             confident_windows = []
             confident_records = []
             # for subsetting the candidates
-            # for window in sequence_windows:
-            #     for interval in confident_intervals_in_region:
-            #         if self.a_fully_contains_range_b(interval, window):
-            #             confident_windows.append(window)
-            #
-            #         for candidate_pos in range(window[0], window[1]):
-            #             confident_records.append(candidate_map[candidate_pos])
+            for window in sequence_windows:
+                for interval in confident_intervals_in_region:
+                    if self.a_fully_contains_range_b(interval, window):
+                        confident_windows.append(window)
+
+                    for candidate_pos in range(window[0], window[1]):
+                        confident_records.append(candidate_map[candidate_pos])
 
             # for a dry run, do not subset the windows
             # <<begin>>
-            for window in sequence_windows:
-                confident_windows.append(window)
-
-                for candidate_pos in range(window[0], window[1]):
-                    confident_records.append(candidate_map[candidate_pos])
+            # for window in sequence_windows:
+            #     confident_windows.append(window)
+            #
+            #     for candidate_pos in range(window[0], window[1]):
+            #         confident_records.append(candidate_map[candidate_pos])
             # <<end>>
 
             if not confident_windows:
