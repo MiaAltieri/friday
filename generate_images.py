@@ -244,6 +244,9 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
+    if thread_id != 17:
+        return 0
+
     for chr_name, region in chr_list:
         if not region:
             interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
@@ -275,9 +278,11 @@ def chromosome_level_parallelization(chr_list,
 
         for interval in intervals:
             _start, _end = interval
+            print("STARTING: ", _start, _end)
             n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
                                                                           end_position=_end,
                                                                           local_alignment_flag=local_alignment)
+            print("END: ", _start, _end)
             total_reads_processed += n_reads
             total_windows += n_windows
 
