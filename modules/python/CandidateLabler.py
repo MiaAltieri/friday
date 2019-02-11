@@ -481,7 +481,7 @@ class CandidateLabeler:
 
     def find_best_haplotype(self, candidate_group, truth_group, ref):
         truth_haplotypes = self.duplicate_haplotypes(self.create_truth_haplotype(truth_group, ref))
-        candidate_haplotypes = self.duplicate_haplotypes(self.create_candidate_haplotype(candidate_group, ref))
+        candidate_haplotypes = list(self.create_candidate_haplotype(candidate_group, ref))
         # if DEBUG_IT:
         #     print("TRUTH HAPLOTYPES:")
         #     for hap in truth_haplotypes:
