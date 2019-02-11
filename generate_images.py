@@ -255,7 +255,8 @@ def chromosome_level_parallelization(chr_list,
             all_intervals.append((pos, min(interval_end, pos + max_size - 1)))
 
         intervals = [r for i, r in enumerate(all_intervals) if i % total_threads == thread_id]
-        print(intervals)
+        if thread_id == 17:
+            print(intervals)
         exit()
 
         view = View(chromosome_name=chr_name,
