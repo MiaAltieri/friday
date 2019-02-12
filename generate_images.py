@@ -332,20 +332,21 @@ def chromosome_level_parallelization(chr_list,
 
             del all_images, all_labels, candidate_map
 
-            if thread_id == 17:
+            if thread_id == 2:
                 print("CHROMOSOME: ", chr_name,
                       "INTERVAL: ", interval,
                       "READS: ", n_reads,
                       "WINDOWS: ", n_windows,
+                      "THREAD ID: ", thread_id,
                       "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
                       math.ceil(time.time()-start_time) % 60, "SEC")
 
-        # print("CHROMOSOME: ", chr_name,
-        #       "THREAD ID: ", thread_id,
-        #       "READS: ", total_reads_processed,
-        #       "WINDOWS: ", total_windows,
-        #       "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-        #       math.ceil(time.time()-start_time) % 60, "SEC")
+        print("CHROMOSOME: ", chr_name,
+              "THREAD ID: ", thread_id,
+              "READS: ", total_reads_processed,
+              "WINDOWS: ", total_windows,
+              "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+              math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
