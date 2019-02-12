@@ -315,31 +315,35 @@ def chromosome_level_parallelization(chr_list,
                 smry.write(summary_string)
                 global_index += 1
 
-            hdf5_file = h5py.File(image_file_name, mode='w')
-            # the image dataset we save. The index name in h5py is "images".
-            img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
-                                                                                ImageSizeOptions.SEQ_LENGTH,
-                                                                                ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
-                                                compression='gzip')
-            label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
-            # save the images and labels to the h5py file
-            img_dset[...] = all_images
-            label_dataset[...] = all_labels
-            hdf5_file.close()
+            with h5py.File(image_file_name, mode='w') as hdf5_file:
+                # the image dataset we save. The index name in h5py is "images".
+                img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+                                                                                    ImageSizeOptions.SEQ_LENGTH,
+                                                                                    ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
+                                                    compression='gzip')
+                label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
+                # save the images and labels to the h5py file
+                img_dset[...] = all_images
+                label_dataset[...] = all_labels
 
             with open(dictionary_file_path, 'wb') as f:
-                pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+                try:
+                    pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+                except pickle.PicklingError:
+                    print('Error when serializing data',
+                          "CHROMOSOME: ", chr_name,
+                          "INTERVAL: ", interval,
+                          "THREAD ID: ", thread_id,)
+            # del all_images, all_labels, candidate_map
 
-            del all_images, all_labels, candidate_map
-
-            if thread_id == 2:
-                print("CHROMOSOME: ", chr_name,
-                      "INTERVAL: ", interval,
-                      "READS: ", n_reads,
-                      "WINDOWS: ", n_windows,
-                      "THREAD ID: ", thread_id,
-                      "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-                      math.ceil(time.time()-start_time) % 60, "SEC")
+            # if thread_id == 2:
+            #     print("CHROMOSOME: ", chr_name,
+            #           "INTERVAL: ", interval,
+            #           "READS: ", n_reads,
+            #           "WINDOWS: ", n_windows,
+            #           "THREAD ID: ", thread_id,
+            #           "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+            #           math.ceil(time.time()-start_time) % 60, "SEC")
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
