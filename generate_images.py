@@ -244,9 +244,6 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
 
-    if thread_id != 2:
-        return
-    print(chr_list)
     for chr_name, region in chr_list:
         if not region:
             interval_start, interval_end = (0, fasta_handler.get_chromosome_sequence_length(chr_name) + 1)
@@ -335,19 +332,20 @@ def chromosome_level_parallelization(chr_list,
 
             del all_images, all_labels, candidate_map
 
-            print("CHROMOSOME: ", chr_name,
-                  "INTERVAL: ", interval,
-                  "READS: ", n_reads,
-                  "WINDOWS: ", n_windows,
-                  "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-                  math.ceil(time.time()-start_time) % 60, "SEC")
+            if thread_id == 17:
+                print("CHROMOSOME: ", chr_name,
+                      "INTERVAL: ", interval,
+                      "READS: ", n_reads,
+                      "WINDOWS: ", n_windows,
+                      "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+                      math.ceil(time.time()-start_time) % 60, "SEC")
 
-        print("CHROMOSOME: ", chr_name,
-              "THREAD ID: ", thread_id,
-              "READS: ", total_reads_processed,
-              "WINDOWS: ", total_windows,
-              "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-              math.ceil(time.time()-start_time) % 60, "SEC")
+        # print("CHROMOSOME: ", chr_name,
+        #       "THREAD ID: ", thread_id,
+        #       "READS: ", total_reads_processed,
+        #       "WINDOWS: ", total_windows,
+        #       "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
+        #       math.ceil(time.time()-start_time) % 60, "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
