@@ -119,6 +119,13 @@ class View:
         """
         # st_time = time.time()
         # print("STARTING", start_position, end_position)
+        confident_intervals_in_region = []
+        if self.train_mode:
+            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            if not confident_intervals_in_region:
+                log_file.write("NO CONFIDENT INTERVALS FOUND" + "\n")
+                return 0, 0, None, None
+
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
                                          self.chromosome_name,
@@ -153,11 +160,7 @@ class View:
 
         # # get all labeled candidate sites
         if self.train_mode:
-            confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             log_file.write("CONFIDENT INTERVALS: " + str(len(confident_intervals_in_region)) + "\n")
-            if not confident_intervals_in_region:
-                return 0, 0, None, None
-
             confident_windows = []
             confident_records = []
             # for subsetting the candidates
