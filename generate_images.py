@@ -110,7 +110,7 @@ class View:
         if range_b[0] >= range_a[0] and range_b[1] <= range_a[1]: return True
         return False
 
-    def parse_region(self, start_position, end_position, local_alignment_flag):
+    def parse_region(self, start_position, end_position, local_alignment_flag, log_file):
         """
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
@@ -127,6 +127,7 @@ class View:
 
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
 
+        log_file.write("REALIGNMENT DONE. READS FOUND: " + str(len(reads)) + "\n")
         if not reads:
             return 0, 0, None, None
 
@@ -136,7 +137,8 @@ class View:
                                            end_position)
         candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
 
-        if not candidate_positions:
+        log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_positions)) + "\n")
+        if not candidate_positions or not candidate_map:
             return len(reads), 0, None, None
 
         sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
@@ -152,6 +154,7 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
+            log_file.write("CONFIDENT INTERVALS: " + str(len(confident_intervals_in_region)) + "\n")
             if not confident_intervals_in_region:
                 return 0, 0, None, None
 
@@ -166,6 +169,7 @@ class View:
                     for candidate_pos in range(window[0], window[1]):
                         confident_records.append(candidate_map[candidate_pos])
 
+            log_file.write("CANDIDATE SUBSET DONE. RECORDS: " + str(len(confident_records)) + "\n")
             # for a dry run, do not subset the windows
             # <<begin>>
             # for window in sequence_windows:
@@ -175,11 +179,12 @@ class View:
             #         confident_records.append(candidate_map[candidate_pos])
             # <<end>>
 
-            if not confident_windows:
+            if not confident_windows or not confident_records:
                 return 0, 0, None, None
 
             labeled_sites = self.get_labeled_candidate_sites(confident_records, start_position, end_position, True)
 
+            log_file.write("LABELING DONE. SITES: " + str(len(labeled_sites)) + "\n")
             for labeled_site in labeled_sites:
                 candidate_map[labeled_site.pos] = labeled_site
             del labeled_sites
@@ -190,6 +195,7 @@ class View:
                                                             self.vcf_path,
                                                             train_mode=True)
 
+            log_file.write("IMAGE GENERATION DONE. SITES: " + str(len(pileup_images)) + "\n")
             return len(reads), len(confident_windows), pileup_images, candidate_map
         else:
             pileup_images = image_generator.generate_pileup(reads,
@@ -230,6 +236,7 @@ def chromosome_level_parallelization(chr_list,
                                      train_mode,
                                      downsample_rate,
                                      local_alignment,
+                                     log_dir,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -243,6 +250,7 @@ def chromosome_level_parallelization(chr_list,
     """
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
+    log_file = open(log_dir + str(thread_id) + ".log", 'w')
 
     for chr_name, region in chr_list:
         if not region:
@@ -273,15 +281,20 @@ def chromosome_level_parallelization(chr_list,
         total_reads_processed = 0
         total_windows = 0
 
-        for interval in intervals:
+        for count, interval in enumerate(intervals):
             _start, _end = interval
+            log_file.write(str(count+1)+"/"+str(len(intervals))+": INTERVAL " + str(interval) + "\n")
             n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
                                                                           end_position=_end,
-                                                                          local_alignment_flag=local_alignment)
+                                                                          local_alignment_flag=local_alignment,
+                                                                          log_file=log_file)
+
+            log_file.write("READS: " + str(n_reads) + " WINDOWS: " + str(n_windows) + "\n")
             total_reads_processed += n_reads
             total_windows += n_windows
 
             if not images or not candidate_map:
+                log_file.write("DONE WITH NO IMAGES" + "\n")
                 continue
 
             all_images = []
@@ -315,6 +328,7 @@ def chromosome_level_parallelization(chr_list,
                 smry.write(summary_string)
                 global_index += 1
 
+            log_file.write("SAVING IMAGES" + "\n")
             with h5py.File(image_file_name, mode='w') as hdf5_file:
                 # the image dataset we save. The index name in h5py is "images".
                 img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
@@ -326,6 +340,7 @@ def chromosome_level_parallelization(chr_list,
                 img_dset[...] = all_images
                 label_dataset[...] = all_labels
 
+            log_file.write("SAVING DICTIONARIES" + "\n")
             with open(dictionary_file_path, 'wb') as f:
                 try:
                     pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
@@ -334,6 +349,8 @@ def chromosome_level_parallelization(chr_list,
                           "CHROMOSOME: ", chr_name,
                           "INTERVAL: ", interval,
                           "THREAD ID: ", thread_id,)
+
+            log_file.write("DONE" + "\n")
             # del all_images, all_labels, candidate_map
 
             # if thread_id == 2:
@@ -502,6 +519,12 @@ if __name__ == '__main__':
         help="Path to output directory."
     )
     parser.add_argument(
+        "--log_dir",
+        type=str,
+        default="candidate_finder_output/",
+        help="Path to output directory."
+    )
+    parser.add_argument(
         "--threads",
         type=int,
         default=5,
@@ -539,6 +562,12 @@ if __name__ == '__main__':
         exit(1)
     output_dir, image_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
 
+    log_dir = FLAGS.log_dir
+    if log_dir[-1] != "/":
+        log_dir += "/"
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
     chromosome_level_parallelization(chr_list,
                                      FLAGS.bam,
                                      FLAGS.fasta,
@@ -550,5 +579,6 @@ if __name__ == '__main__':
                                      FLAGS.thread_id,
                                      FLAGS.train_mode,
                                      FLAGS.downsample_rate,
-                                     FLAGS.local_alignment)
+                                     FLAGS.local_alignment,
+                                     log_dir)
 
