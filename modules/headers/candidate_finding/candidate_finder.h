@@ -28,144 +28,6 @@ namespace Genotype {
     static constexpr int HOM_ALT = 2;
 };
 
-
-struct PositionalCandidateRecord{
-    string chromosome_name;
-    long long pos;
-    long long pos_end;
-    string ref;
-    string alt1;
-    string alt2;
-    int alt1_type;
-    int alt2_type;
-
-
-    bool labeled;
-    int alt1_gt;
-    int alt2_gt;
-    vector<int> genotype {0, 0};
-
-    PositionalCandidateRecord(string chr_name, long long pos, long long pos_end, string ref, string alt1, string alt2,
-    int alt1_type, int alt2_type) {
-        this->chromosome_name = chr_name;
-        this->pos = pos;
-        this->pos_end = pos_end;
-        this->ref = ref;
-        this->alt1 = alt1;
-        this->alt2 = alt2;
-        this->alt1_type = alt1_type;
-        this->alt2_type = alt2_type;
-    }
-
-    PositionalCandidateRecord() {
-        this->alt1_type = 0;
-        this->alt2_type = 0;
-        this->labeled = 0;
-        this->alt1_gt = 0;
-        this->alt2_gt = 0;
-        this->alt1 = '.';
-        this->alt2 = '.';
-    }
-
-    void set_positions(string chromosme_name, long long pos, long long pos_end) {
-        this->chromosome_name = chromosme_name;
-        this->pos = pos;
-        this->pos_end = pos_end;
-    }
-
-    void set_reference(string ref) {
-        this->ref = ref;
-    }
-
-    void set_alt1(string alt1, int alt1_type) {
-        this->alt1 = alt1;
-        this->alt1_type = alt1_type;
-    }
-
-    void set_alt2(string alt2, int alt2_type, long long pos_end) {
-        this->alt2 = alt2;
-        this->alt2_type = alt2_type;
-        this->pos_end = max(this->pos_end, pos_end);
-    }
-
-    void set_genotype(vector<int> genotype) {
-        this->genotype = genotype;
-        this->labeled = true;
-        int rec_genotype = Genotype::HOM;
-        if(genotype[0] != 0 or genotype[1] != 0) {
-            if(genotype[0] == genotype[1]) {
-                rec_genotype = Genotype::HOM_ALT;
-            } else {
-                rec_genotype = Genotype::HET;
-            }
-        }
-
-        if(genotype[0] == 1 or genotype[1] == 1) {
-            this->alt1_gt = rec_genotype;
-        }
-        if(genotype[0] == 2 or genotype[1] == 2) {
-            this->alt2_gt = rec_genotype;
-        }
-    }
-
-    string get_type(int type) {
-        if(type == AlleleType::SNP_ALLELE) return "SNP";
-        if(type == AlleleType::INSERT_ALLELE) return "IN";
-        if(type == AlleleType::DELETE_ALLELE) return "DEL";
-        return "";
-    }
-
-    string get_gt(int gt){
-        if(gt == Genotype::HOM) return "HOM";
-        if(gt == Genotype::HET) return "HET";
-        if(gt == Genotype::HOM_ALT) return "HOM_ALT";
-        return "";
-    }
-
-    void print() {
-        cout<<this->chromosome_name<<" "<<this->pos<<" "<<this->pos_end<<" "<<this->ref;
-        cout<<" "<<this->alt1<<" "<<this->alt2<<" "<<get_type(this->alt1_type)<<" "<<get_type(this->alt2_type);
-        if(this->labeled) cout<<" ("<<genotype[0]<<", "<<genotype[1]<<")";
-        if(this->labeled) cout<<" "<<get_gt(this->alt1_gt)<<" "<<get_gt(this->alt2_gt);
-        cout<<endl;
-    }
-
-    vector<string> get_candidate_record() {
-        vector<string> records;
-
-        string rec_alt1 = this->chromosome_name + "\t" + to_string(this->pos) + "\t" + to_string(this->pos_end);
-        rec_alt1 = rec_alt1 + "\t" + this->ref + "\t" + this->alt1 + "\t" + '.' ;
-        rec_alt1 = rec_alt1 + "\t" + to_string(this->alt1_type) + "\t" + '0' + "\t" + to_string(this->alt1_gt);
-        records.push_back(rec_alt1);
-
-        if(this->alt2.compare(".") == 0) {
-            return records;
-        }
-
-        string rec_alt2 = this->chromosome_name + "\t" + to_string(this->pos) + "\t" + to_string(this->pos_end);
-        rec_alt2 = rec_alt2 + "\t" + this->ref + "\t" + this->alt2 + "\t" + '.' ;
-        rec_alt2 = rec_alt2 + "\t" + to_string(this->alt2_type) + "\t" + '0' + "\t" + to_string(this->alt2_gt);
-        records.push_back(rec_alt2);
-
-        int rec_genotype = Genotype::HOM;
-        if(this->genotype[0] != 0 or this->genotype[1] != 0) {
-            if(this->genotype[0] == this->genotype[1]) {
-                rec_genotype = Genotype::HOM_ALT;
-            } else if(this->genotype[0] != 0 and this->genotype[1] != 0) {
-                rec_genotype = Genotype::HOM_ALT; // 2/1 or 1/2
-            } else {
-                rec_genotype = Genotype::HET;
-            }
-        }
-        string rec_com = this->chromosome_name + "\t" + to_string(this->pos) + "\t" + to_string(this->pos_end);
-        rec_com = rec_com + "\t" + this->ref + "\t" + this->alt1 + "\t" + this->alt2 ;
-        rec_com = rec_com + "\t" + to_string(this->alt1_type) + "\t" + to_string(this->alt2_type) + "\t" + to_string(rec_genotype);
-        records.push_back(rec_com);
-
-        return records;
-    }
-};
-
 struct CandidateAllele{
     string ref;
     string alt;
@@ -183,7 +45,17 @@ struct CandidateAllele{
 struct Candidate{
     long long pos;
     long long pos_end;
+    vector<string> supporting_read_ids;
     CandidateAllele allele;
+    int genotype;
+
+    Candidate() {
+        this->genotype = 0;
+    }
+
+    void set_genotype(int genotype) {
+        this->genotype = genotype;
+    }
 
     Candidate(long long pos_start, long long pos_end, string ref, string alt, int alt_type) {
         this->pos = pos_start;
@@ -191,6 +63,7 @@ struct Candidate{
         this->allele.alt = alt;
         this->allele.ref = ref;
         this->allele.alt_type = alt_type;
+        this->genotype = 0;
     }
     bool operator< (const Candidate& that ) const {
         if(this->pos != that.pos) return this->pos < that.pos;
@@ -211,6 +84,29 @@ struct Candidate{
         return false;
     }
 
+    void print() {
+        cout<<this->pos<<" "<<this->pos_end<<" "<<this->allele.ref<<" "<<this->allele.alt<<" "<<this->allele.alt_type<<" "<<this->genotype<<endl;
+    }
+
+};
+
+struct PositionalCandidateRecord{
+    string chromosome_name;
+    long long pos_start;
+    long long pos_end;
+    string ref;
+    vector<string> alternate_alleles;
+    vector<int> allele_depths;
+    vector<double> allele_frequencies;
+    vector<int> genotype {0, 0};
+    vector< vector<string> > read_support_alleles;
+
+    int depth;
+    bool labeled;
+
+    void set_genotype(vector<int> gt) {
+        genotype = gt;
+    }
 };
 
 class CandidateFinder {
@@ -221,6 +117,7 @@ class CandidateFinder {
     string chromosome_name;
     string reference_sequence;
     map<Candidate, int> AlleleFrequencyMap;
+    map<Candidate, vector<string> > ReadSupportMap;
     vector< set<Candidate> > AlleleMap;
 public:
     CandidateFinder(string reference_sequence,
@@ -229,8 +126,8 @@ public:
                     long long region_end,
                     long long ref_start,
                     long long ref_end);
-    void add_read_alleles(type_read &read, vector<int> &coverage);
-    pair<set<long long>, map<long long, PositionalCandidateRecord>  >  find_candidates(vector<type_read> reads);
+    void add_read_alleles(type_read &read, vector<int> &coverage, vector<int> &allele_ends);
+    vector<PositionalCandidateRecord> find_candidates(vector<type_read> reads);
 };
 
 

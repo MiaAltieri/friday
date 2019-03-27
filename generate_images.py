@@ -17,6 +17,7 @@ from modules.python.FileManager import FileManager
 from modules.python.PileupGenerator import PileupGenerator
 from modules.python.Options import ImageSizeOptions
 from modules.python.CandidateLabler import CandidateLabeler
+from modules.python.AlignmentSummarizer import AlignmentSummarizer
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
 - Find candidates that can be variants
@@ -135,6 +136,7 @@ class View:
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
 
         log_file.write("REALIGNMENT DONE. READS FOUND: " + str(len(reads)) + "\n")
+
         if not reads:
             return 0, 0, None, None
 
@@ -142,15 +144,10 @@ class View:
                                            self.chromosome_name,
                                            start_position,
                                            end_position)
-        candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
+        candidate_list = candidate_finder.find_candidates(reads)
 
-        log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_positions)) + "\n")
-        if not candidate_positions or not candidate_map:
-            return len(reads), 0, None, None
-
-        sequence_windows = candidate_finder.get_windows_from_candidates(candidate_positions)
-
-        if not sequence_windows:
+        log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_list)) + "\n")
+        if not candidate_list:
             return len(reads), 0, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
@@ -161,18 +158,15 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             log_file.write("CONFIDENT INTERVALS: " + str(len(confident_intervals_in_region)) + "\n")
-            confident_windows = []
-            confident_records = []
+
+            confident_candidates = []
             # for subsetting the candidates
-            for window in sequence_windows:
+            for candidate in candidate_list:
                 for interval in confident_intervals_in_region:
-                    if self.a_fully_contains_range_b(interval, window):
-                        confident_windows.append(window)
+                    if self.a_fully_contains_range_b(interval, (candidate.pos_start, candidate.pos_start)):
+                        confident_candidates.append(candidate)
 
-                    for candidate_pos in range(window[0], window[1]):
-                        confident_records.append(candidate_map[candidate_pos])
-
-            log_file.write("CANDIDATE SUBSET DONE. RECORDS: " + str(len(confident_records)) + "\n")
+            log_file.write("CANDIDATE SUBSET DONE. RECORDS: " + str(len(confident_candidates)) + "\n")
             # for a dry run, do not subset the windows
             # <<begin>>
             # for window in sequence_windows:
@@ -182,31 +176,26 @@ class View:
             #         confident_records.append(candidate_map[candidate_pos])
             # <<end>>
 
-            if not confident_windows or not confident_records:
+            if not confident_candidates:
                 return 0, 0, None, None
 
-            labeled_sites = self.get_labeled_candidate_sites(confident_records, start_position, end_position, True)
+            # should summarize and get labels here
+            labeled_candidates = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position,
+                                                                  True)
 
-            log_file.write("LABELING DONE. SITES: " + str(len(labeled_sites)) + "\n")
-            for labeled_site in labeled_sites:
-                candidate_map[labeled_site.pos] = labeled_site
-            del labeled_sites
+            log_file.write("LABELING DONE. SITES: " + str(len(labeled_candidates)) + "\n")
 
-            pileup_images = image_generator.generate_pileup(reads,
-                                                            confident_windows,
-                                                            candidate_map,
-                                                            self.vcf_path,
-                                                            train_mode=True)
-
-            log_file.write("IMAGE GENERATION DONE. SITES: " + str(len(pileup_images)) + "\n")
-            return len(reads), len(confident_windows), pileup_images, candidate_map
+            # pileup_images = image_generator.generate_pileup(reads,
+            #                                                 confident_windows,
+            #                                                 candidate_map,
+            #                                                 self.vcf_path,
+            #                                                 train_mode=True)
+            # alignment_summarizer.create_summary(confident_windows, reads, candidate_map, train_mode=True)
+            # log_file.write("IMAGE GENERATION DONE. SITES: " + str(len(pileup_images)) + "\n")
+            return len(reads), labeled_candidates
         else:
-            pileup_images = image_generator.generate_pileup(reads,
-                                                            sequence_windows,
-                                                            candidate_map,
-                                                            self.vcf_path,
-                                                            train_mode=False)
-            return len(reads), len(sequence_windows), pileup_images, candidate_map
+            print("NOT IMPLEMENTED")
+            pass
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
@@ -282,76 +271,61 @@ def chromosome_level_parallelization(chr_list,
 
         start_time = time.time()
         total_reads_processed = 0
-        total_windows = 0
+        total_candidates = 0
 
         for count, interval in enumerate(intervals):
             _start, _end = interval
             log_file.write(str(count+1)+"/"+str(len(intervals))+": INTERVAL " + str(interval) + "\n")
-            n_reads, n_windows, images, candidate_map = view.parse_region(start_position=_start,
-                                                                          end_position=_end,
-                                                                          local_alignment_flag=local_alignment,
-                                                                          log_file=log_file)
+            n_reads, candidates = view.parse_region(start_position=_start,
+                                                    end_position=_end,
+                                                    local_alignment_flag=local_alignment,
+                                                    log_file=log_file)
 
-            log_file.write("READS: " + str(n_reads) + " WINDOWS: " + str(n_windows) + "\n")
+            log_file.write("READS: " + str(n_reads) + " CANDIDATES: " + str(len(candidates)) + "\n")
             total_reads_processed += n_reads
-            total_windows += n_windows
+            total_candidates += len(candidates)
 
-            if not images or not candidate_map:
-                log_file.write("DONE WITH NO IMAGES" + "\n")
+            if not candidates:
+                log_file.write("DONE WITH NO CANDIDATES" + "\n")
                 continue
 
-            all_images = []
-            all_labels = []
-            image_file_name = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".h5py"
+            # all_images = []
+            # all_labels = []
+            # image_file_name = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".h5py"
 
             # save the dictionary
-            dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".pkl"
-            global_index = 0
+            # dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".pkl"
+            # global_index = 0
 
             # save the images
-            for i, image in enumerate(images):
-                record = (image.chromosome_name,
-                          image.start_pos + ImageSizeOptions.CONTEXT_SIZE,
-                          image.end_pos - ImageSizeOptions.CONTEXT_SIZE)
-
-                all_images.append(image.image)
-                if train_mode:
-                    all_labels.append(image.label)
-                    # np_array_image = np.array(image.label, dtype=np.uint8)
-                    # torch.save(torch.from_numpy(np_array_image).data, image_path + file_name+".label")
-
-                # write in summary file
-                if train_mode:
-                    # write in summary file
-                    summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
-                                     ' '.join(map(str, record)) + "," + ''.join(map(str, image.label)) + "\n"
-                else:
-                    summary_string = image_file_name + "," + str(global_index) + "," + dictionary_file_path + "," + \
-                                     ' '.join(map(str, record)) + "\n"
+            for i, candidate in enumerate(candidates):
+                summary_string = candidate.chromosome_name + "\t" + str(candidate.pos_start) + "\t" + str(candidate.pos_end) + "\t" + candidate.ref + "\n"
+                summary_string = summary_string + '\t'.join(candidate.alternate_alleles) + "\n"
+                summary_string = summary_string + '\t'.join([str(x) for x in candidate.genotype]) + "\n"
                 smry.write(summary_string)
-                global_index += 1
+                # global_index += 1
 
-            log_file.write("SAVING IMAGES" + "\n")
-            with h5py.File(image_file_name, mode='w') as hdf5_file:
-                # the image dataset we save. The index name in h5py is "images".
-                img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
-                                                                                    ImageSizeOptions.SEQ_LENGTH,
-                                                                                    ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
-                                                    compression='gzip')
-                label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
-                # save the images and labels to the h5py file
-                img_dset[...] = all_images
-                label_dataset[...] = all_labels
+            # log_file.write("SAVING IMAGES" + "\n")
+            # with h5py.File(image_file_name, mode='w') as hdf5_file:
+            #     # the image dataset we save. The index name in h5py is "images".
+            #     img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+            #                                                                         ImageSizeOptions.SEQ_LENGTH,
+            #                                                                         ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
+            #                                         compression='gzip')
+            #     label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
+            #     # save the images and labels to the h5py file
+            #     img_dset[...] = all_images
+            #     label_dataset[...] = all_labels
 
-            log_file.write("SAVING DICTIONARIES" + "\n")
-            with open(dictionary_file_path, 'wb') as f:
-                try:
-                    pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
-                except pickle.PicklingError:
-                    print('Error when serializing data',
-                          "CHROMOSOME: ", chr_name,
-                          "INTERVAL: ", interval,
-                          "THREAD ID: ", thread_id,)
+            # log_file.write("SAVING DICTIONARIES" + "\n")
+            # with open(dictionary_file_path, 'wb') as f:
+            #     try:
+            #         pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
+            #     except pickle.PicklingError:
+            #         print('Error when serializing data',
+            #               "CHROMOSOME: ", chr_name,
+            #               "INTERVAL: ", interval,
+            #               "THREAD ID: ", thread_id,)
 
             log_file.write("DONE" + "\n")
             # del all_images, all_labels, candidate_map
@@ -368,7 +342,7 @@ def chromosome_level_parallelization(chr_list,
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
               "READS: ", total_reads_processed,
-              "WINDOWS: ", total_windows,
+              "CANDIDATES: ", total_candidates,
               "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
               math.ceil(time.time()-start_time) % 60, "SEC")
 

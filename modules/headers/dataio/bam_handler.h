@@ -103,11 +103,7 @@ struct type_read{
     vector <int> bad_indicies;
     int mapping_quality;
     vector <int> base_qualities;
-    int read_id;
-
-    void set_read_id(int id) {
-        this->read_id = id;
-    }
+    string read_id;
 
     void set_position(long long pos){
         this->pos = pos;
@@ -127,6 +123,7 @@ struct type_read{
         this->bad_indicies = that.bad_indicies;
         this->mapping_quality = that.mapping_quality;
         this->base_qualities = that.base_qualities;
+        this->read_id = that.read_id;
     }
 
     bool operator<(const type_read& that) {

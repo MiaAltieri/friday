@@ -341,7 +341,7 @@ vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long,
     }
     // now iterate through each of the reads and add it to different windows if read overlaps
     for(int i=0; i<reads.size(); i++) {
-        reads[i].set_read_id(i);
+        // reads[i].set_read_id(i);
         vector<int> windows_indices;
         for(int j=0; j < windows.size(); j++) {
             if(overlap_length_between_ranges(make_pair(reads[i].pos, reads[i].pos + reads[i].sequence.length() + 1),

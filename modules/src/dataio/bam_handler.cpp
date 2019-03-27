@@ -178,12 +178,15 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         // mapping quality
         int map_quality = alignment->core.qual;
 
+        char strand_char = read_flags.is_read1 ? '0':'1';
+        // read id character
         // set all fetched attributes
         type_read read;
         read.query_name = query_name;
         read.pos = pos;
         read.pos_end = pos_end;
         read.sequence = read_seq;
+        read.read_id = query_name + '/' + strand_char;
         read.flags = read_flags;
         read.mapping_quality = map_quality;
         read.base_qualities = base_qualities;

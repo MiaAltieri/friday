@@ -453,14 +453,9 @@ class CandidateLabeler:
         return ref, alt1
 
     def get_proper_candidate(self, candidate):
-        if candidate.alt2_type == 0:
-            allele_tuple = self.solve_single_alt((candidate.alt1, candidate.alt1_type), candidate.ref)
-        else:
-            allele_tuple = self.solve_multiple_alts(((candidate.alt1, candidate.alt1_type),
-                                                     (candidate.alt2, candidate.alt2_type)), candidate.ref)
-
-        return candidate.chromosome_name, candidate.pos, candidate.pos + len(allele_tuple[0]), \
-               allele_tuple, (0, 0), False, candidate
+        ref = [candidate.ref]
+        return candidate.chromosome_name, candidate.pos_start, candidate.pos_end, \
+               tuple(ref) + tuple(candidate.alternate_alleles), (0, 0), False, candidate
 
     def duplicate_haplotypes(self, haplotypes_and_genotypes):
         haplotypes_and_genotypes = list(haplotypes_and_genotypes)
@@ -507,7 +502,7 @@ class CandidateLabeler:
         else:
             return self.select_best_haplotype_match(found)
 
-    def get_labeled_candidates(self, chromosome_name, pos_start, pos_end, candidate_sites):
+    def get_labeled_candidates(self, chromosome_name, pos_start, pos_end, candidates):
         """
         Label candidates given variants from a VCF
         :param positional_vcf: IN/DEL/SNPs separated into VCF records, expanded into a 1-to-1 ref_pos:variant allele
@@ -517,14 +512,19 @@ class CandidateLabeler:
         # list of all labeled candidates
         candidate_records = []
 
-        # for candidate in candidate_sites:
-        #     candidate.print()
+        # for position, candidate_list in candidate_sites:
+        #     print(position)
+        #     for candidate in candidate_list:
+        #         print(candidate.pos, candidate.allele.ref, candidate.allele.alt, candidate.allele.alt_type,
+        #               candidate.genotype, candidate.supporting_read_ids)
+        #     print("----")
+        # exit()
 
-        for candidate in candidate_sites:
+        for candidate in candidates:
             candidate_record = self.get_proper_candidate(candidate)
-            candidate_records.append(candidate_record)
 
-        del candidate_sites
+            candidate_records.append(candidate_record)
+        del candidates
 
         # sort candidates based on positions
         candidate_records = sorted(candidate_records, key=itemgetter(1))
@@ -542,12 +542,12 @@ class CandidateLabeler:
             #     for candidate in truth_group:
             #         print(candidate[:-1])
             #     print("........................")
+
             if not candidate_group:
                 continue
             if not truth_group:
                 for labeled_candidate in candidate_group:
                     labeled_candidate[6].set_genotype(labeled_candidate[4])
-                    # candidate_with_gts = labeled_candidate[6].set_genotype(labeled_candidate[4])
                     all_labeled_candidates.append(labeled_candidate[6])
                 continue
 
@@ -566,16 +566,16 @@ class CandidateLabeler:
             for labeled_candidate in labeled_set.candidates_with_assigned_genotypes():
                 labeled_candidate[6].set_genotype(labeled_candidate[4])
                 # if DEBUG_IT:
-                #     print(candidate_with_gts)
+                #     print(assigned_candidates)
                 all_labeled_candidates.append(labeled_candidate[6])
 
             # if DEBUG_IT:
             #     print("------------------------")
             del labeled_set, ref
 
-        # all_labeled_candidates = sorted(all_labeled_candidates, key=itemgetter(1))
-        # for labeled_candidate in all_labeled_candidates:
-        #     labeled_candidate.print()
+        # for candidate in all_labeled_candidates:
+        #     print(candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles,
+        #           candidate.genotype)
         # labeled_candidate.print()
         # print(all_labeled_candidates)
         return all_labeled_candidates

@@ -29,14 +29,15 @@ class CandidateFinder:
                                                   ref_end)
 
         # find candidates
-        candidate_positions, candidate_map = candidate_finder.find_candidates(reads)
+        candidate_list = candidate_finder.find_candidates(reads)
 
-        filtered_positions = []
-        for candidate_position in candidate_positions:
-            if self.region_start <= candidate_position <= self.region_end:
-                filtered_positions.append(candidate_position)
+        # only return candidates that fall in this region
+        filtered_list = []
+        for candidate in candidate_list:
+            if self.region_start <= candidate.pos_start <= self.region_end:
+                filtered_list.append(candidate)
 
-        return filtered_positions, candidate_map
+        return filtered_list
 
     @staticmethod
     def get_windows_from_candidates(candidate_positions):
