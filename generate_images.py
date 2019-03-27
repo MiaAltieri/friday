@@ -125,7 +125,7 @@ class View:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
                 log_file.write("NO CONFIDENT INTERVALS FOUND" + "\n")
-                return 0, 0, None, None
+                return 0, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -138,7 +138,7 @@ class View:
         log_file.write("REALIGNMENT DONE. READS FOUND: " + str(len(reads)) + "\n")
 
         if not reads:
-            return 0, 0, None, None
+            return 0, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -148,12 +148,12 @@ class View:
 
         log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_list)) + "\n")
         if not candidate_list:
-            return len(reads), 0, None, None
+            return len(reads), None
 
-        image_generator = PileupGenerator(self.fasta_handler,
-                                          self.chromosome_name,
-                                          start_position,
-                                          end_position)
+        # image_generator = PileupGenerator(self.fasta_handler,
+        #                                   self.chromosome_name,
+        #                                   start_position,
+        #                                   end_position)
 
         # # get all labeled candidate sites
         if self.train_mode:
@@ -177,7 +177,7 @@ class View:
             # <<end>>
 
             if not confident_candidates:
-                return 0, 0, None, None
+                return 0, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position,
