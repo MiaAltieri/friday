@@ -125,7 +125,7 @@ class View:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
                 log_file.write("NO CONFIDENT INTERVALS FOUND" + "\n")
-                return 0, None
+                return 0, 0, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -138,7 +138,7 @@ class View:
         log_file.write("REALIGNMENT DONE. READS FOUND: " + str(len(reads)) + "\n")
 
         if not reads:
-            return 0, None
+            return 0, 0, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -148,7 +148,7 @@ class View:
 
         log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_list)) + "\n")
         if not candidate_list:
-            return len(reads), None
+            return len(reads), 0, None
 
         # image_generator = PileupGenerator(self.fasta_handler,
         #                                   self.chromosome_name,
@@ -177,7 +177,7 @@ class View:
             # <<end>>
 
             if not confident_candidates:
-                return 0, None
+                return 0, 0, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position,
@@ -192,7 +192,7 @@ class View:
             #                                                 train_mode=True)
             # alignment_summarizer.create_summary(confident_windows, reads, candidate_map, train_mode=True)
             # log_file.write("IMAGE GENERATION DONE. SITES: " + str(len(pileup_images)) + "\n")
-            return len(reads), labeled_candidates
+            return len(reads), len(labeled_candidates), labeled_candidates
         else:
             print("NOT IMPLEMENTED")
             pass
@@ -276,14 +276,14 @@ def chromosome_level_parallelization(chr_list,
         for count, interval in enumerate(intervals):
             _start, _end = interval
             log_file.write(str(count+1)+"/"+str(len(intervals))+": INTERVAL " + str(interval) + "\n")
-            n_reads, candidates = view.parse_region(start_position=_start,
-                                                    end_position=_end,
-                                                    local_alignment_flag=local_alignment,
-                                                    log_file=log_file)
+            n_reads, n_candidates, candidates = view.parse_region(start_position=_start,
+                                                                  end_position=_end,
+                                                                  local_alignment_flag=local_alignment,
+                                                                  log_file=log_file)
 
-            log_file.write("READS: " + str(n_reads) + " CANDIDATES: " + str(len(candidates)) + "\n")
+            log_file.write("READS: " + str(n_reads) + " CANDIDATES: " + str(n_candidates) + "\n")
             total_reads_processed += n_reads
-            total_candidates += len(candidates)
+            total_candidates += n_candidates
 
             if not candidates:
                 log_file.write("DONE WITH NO CANDIDATES" + "\n")
