@@ -126,7 +126,7 @@ public:
                     long long region_end,
                     long long ref_start,
                     long long ref_end);
-    void add_read_alleles(type_read &read, vector<int> &coverage, vector<int> &allele_ends);
+    void add_read_alleles(type_read &read, vector<int> &coverage);
     vector<PositionalCandidateRecord> find_candidates(vector<type_read> reads);
 };
 

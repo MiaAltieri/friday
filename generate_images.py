@@ -498,7 +498,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--log_dir",
         type=str,
-        default="candidate_finder_output/",
+        default="outputs/logs/",
         help="Path to output directory."
     )
     parser.add_argument(

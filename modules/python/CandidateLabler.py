@@ -566,7 +566,7 @@ class CandidateLabeler:
             for labeled_candidate in labeled_set.candidates_with_assigned_genotypes():
                 labeled_candidate[6].set_genotype(labeled_candidate[4])
                 # if DEBUG_IT:
-                #     print(assigned_candidates)
+                #     print(labeled_candidate)
                 all_labeled_candidates.append(labeled_candidate[6])
 
             # if DEBUG_IT:

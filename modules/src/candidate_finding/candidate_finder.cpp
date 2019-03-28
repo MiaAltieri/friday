@@ -20,7 +20,7 @@ CandidateFinder::CandidateFinder(string reference_sequence,
     AlleleMap.resize(region_end - region_start + 1);
 }
 
-void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage, vector<int> &allele_lengths) {
+void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
     int read_index = 0;
     long long ref_position = read.pos;
     int cigar_index = 0;
@@ -79,7 +79,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage, v
 //                          cout<<read.pos<<" "<<ref_position<<" "<<region_start<<" "<<i<<" ";
 //                          cout<<"SNP: "<<read.query_name<<" "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<" "<<AlleleMap[region_index].size()<<endl;
                             coverage[region_index] += 1;
-                            allele_lengths[region_index] = max(allele_lengths[region_index], 1);
+//                            allele_lengths[region_index] = max(allele_lengths[region_index], 1);
                         }
                     } else if (ref_position <= region_end &&
                                read.base_qualities[read_index] >= CandidateFinder_options::min_base_quality) {
@@ -115,7 +115,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage, v
 
                     if (AlleleMap[region_index].find(candidate_alt) == AlleleMap[region_index].end())
                         AlleleMap[region_index].insert(candidate_alt);
-                    allele_lengths[region_index] = max(allele_lengths[region_index], 1);
+//                    allele_lengths[region_index] = max(allele_lengths[region_index], 1);
 
 //                    cout<<"INSERT: "<<ref_position-1<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
                 }
@@ -151,7 +151,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage, v
 //                    cout<<"DEL: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
                     if (AlleleMap[region_index].find(candidate_alt) == AlleleMap[region_index].end())
                         AlleleMap[region_index].insert(candidate_alt);
-                    allele_lengths[region_index] = max(allele_lengths[region_index], cigar.length + 1);
+//                    allele_lengths[region_index] = max(allele_lengths[region_index], cigar.length + 1);
                 }
 
 //                if (ref_position >= region_start && ref_position <= region_end) {
@@ -230,12 +230,27 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
 //            cout<<endl;
 //        }
 
-        add_read_alleles(read, coverage, allele_ends);
+        add_read_alleles(read, coverage);
     }
 
     int ref_buffer = region_start - ref_start;
     // get all the positions that pass the threshold
     for (long long i = 0; i < coverage.size(); i++) {
+        allele_ends[i] = 1;
+        // first figure out the longest delete
+        for (auto &candidate: AlleleMap[i]) {
+            int freq_can = 0;
+            if (coverage[i] > 0)
+                freq_can = 100.0 * ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]);
+
+            if (freq_can >= CandidateFinder_options::freq_threshold &&
+                AlleleFrequencyMap[candidate] >= CandidateFinder_options::min_count_threshold) {
+                if(candidate.allele.alt_type == DELETE_TYPE) {
+                    allele_ends[i] = max(allele_ends[i], (int) candidate.allele.ref.length());
+                }
+            }
+        }
+
         PositionalCandidateRecord positional_record;
         positional_record.chromosome_name = this->chromosome_name;
         positional_record.pos_start = this->region_start + i;
@@ -251,7 +266,7 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
         for (auto &candidate: AlleleMap[i]) {
             int freq_can = 0;
             if (coverage[i] > 0)
-                freq_can = (int) ceil(100.0 * ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]));
+                freq_can = 100.0 * ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]);
 
             if (freq_can >= CandidateFinder_options::freq_threshold &&
                 AlleleFrequencyMap[candidate] >= CandidateFinder_options::min_count_threshold) {
