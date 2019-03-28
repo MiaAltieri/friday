@@ -50,9 +50,9 @@ def read_friday_candidates(friday_file):
                         matched = False
 
                     # not comparing alleles now
-                    # for alt in dv_alts:
-                    #     if alt not in alts:
-                    #         matched = False
+                    for alt in dv_alts:
+                        if alt not in alts:
+                            matched = False
 
                     dv_gt_list = []
                     for gti in dv_gt:

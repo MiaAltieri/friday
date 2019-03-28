@@ -131,14 +131,13 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                 if (ref_position - 1 >= region_start && ref_position - 1 <= region_end &&
                     ref_position + cigar.length < ref_end) {
                     // process delete allele here
-                    string ref = reference_sequence.substr(ref_position - ref_start - 1, 1);
+                    string ref = reference_sequence.substr(ref_position - ref_start - 1, cigar.length + 1);
                     string alt;
 
-                    if (read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, 1) +
-                            reference_sequence.substr(ref_position - ref_start, cigar.length);
-                    else alt = ref + reference_sequence.substr(ref_position - ref_start, cigar.length);
+                    if (read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, 1);
+                    else alt = reference_sequence.substr(ref_position - ref_start - 1, 1);
 
-                    Candidate candidate_alt(ref_position - 1, ref_position - 1 + cigar.length + 1, alt, ref,
+                    Candidate candidate_alt(ref_position - 1, ref_position - 1 + cigar.length + 1, ref, alt,
                                             AlleleType::DELETE_ALLELE);
 
                     if (AlleleFrequencyMap.find(candidate_alt) != AlleleFrequencyMap.end()) {
@@ -150,6 +149,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                     ReadSupportMap[candidate_alt].push_back(read.read_id);
 
 //                    cout<<"DEL: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
+
                     if (AlleleMap[region_index].find(candidate_alt) == AlleleMap[region_index].end())
                         AlleleMap[region_index].insert(candidate_alt);
 //                    allele_lengths[region_index] = max(allele_lengths[region_index], cigar.length + 1);

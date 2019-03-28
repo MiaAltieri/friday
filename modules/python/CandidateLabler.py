@@ -473,10 +473,10 @@ class CandidateLabeler:
             f for f in all_matches if f.match_metrics == best.match_metrics
         ]
 
-        if len(equivalents) > 1:
-            sys.stderr.write("HAPLOTYPE TIED:\n")
-            for eq in equivalents:
-                sys.stderr.write(str(eq) + "\n")
+        # if len(equivalents) > 1:
+        #     sys.stderr.write("HAPLOTYPE TIED:\n")
+        #     for eq in equivalents:
+        #         sys.stderr.write(str(eq) + "\n")
 
         return equivalents[0]
 
