@@ -158,15 +158,6 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             log_file.write("CONFIDENT INTERVALS: " + str(len(confident_intervals_in_region)) + "\n")
-
-            confident_candidates = []
-            # for subsetting the candidates
-            for candidate in candidate_list:
-                for interval in confident_intervals_in_region:
-                    if self.a_fully_contains_range_b(interval, (candidate.pos_start, candidate.pos_start)):
-                        confident_candidates.append(candidate)
-
-            log_file.write("CANDIDATE SUBSET DONE. RECORDS: " + str(len(confident_candidates)) + "\n")
             # for a dry run, do not subset the windows
             # <<begin>>
             # for window in sequence_windows:
@@ -176,12 +167,21 @@ class View:
             #         confident_records.append(candidate_map[candidate_pos])
             # <<end>>
 
-            if not confident_candidates:
+            if not candidate_list:
                 return 0, 0, None
 
             # should summarize and get labels here
-            labeled_candidates = self.get_labeled_candidate_sites(confident_candidates, start_position, end_position,
+            labeled_candidates = self.get_labeled_candidate_sites(candidate_list, start_position, end_position,
                                                                   True)
+
+            confident_candidates = []
+            # for subsetting the candidates
+            for candidate in labeled_candidates:
+                for interval in confident_intervals_in_region:
+                    if self.a_fully_contains_range_b(interval, (candidate.pos_start, candidate.pos_start)):
+                        confident_candidates.append(candidate)
+
+            labeled_candidates = confident_candidates
 
             log_file.write("LABELING DONE. SITES: " + str(len(labeled_candidates)) + "\n")
 

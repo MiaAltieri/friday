@@ -49,9 +49,10 @@ def read_friday_candidates(friday_file):
                     if dv_ref != ref:
                         matched = False
 
-                    for alt in alts:
-                        if alt not in dv_alts:
-                            matched = False
+                    # not comparing alleles now
+                    # for alt in dv_alts:
+                    #     if alt not in alts:
+                    #         matched = False
 
                     dv_gt_list = []
                     for gti in dv_gt:
@@ -78,7 +79,8 @@ def read_friday_candidates(friday_file):
                         print("DV CANDIDATES:\t", dv_ref, dv_alts, dv_gt)
                         print("FR CANDIDATES:\t", ref, alts, gt)
                 else:
-                    print("NO CANDIDATE FOUND BY DV IN: ", chr_name, pos_start, pos_end, ref, alts, gt)
+                    pass
+                    # print("NO CANDIDATE FOUND BY DV IN: ", chr_name, pos_start, pos_end, ref, alts, gt)
 
                 chr_name, pos_start, pos_end, ref, alts, gt = None, None, None, None, None, None
 

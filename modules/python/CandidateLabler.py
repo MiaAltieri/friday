@@ -8,6 +8,7 @@ from operator import itemgetter
 import collections
 import itertools
 import heapq
+import sys
 
 DEBUG_IT = True
 """
@@ -342,7 +343,7 @@ class CandidateLabeler:
                 yield haplotypes, genotypes
 
     def get_genotypes_for_candidate_set(self, candidate_set):
-        return [{gt for gt in self.get_genotypes_for_candidate(len(v[3]) - 1)} for v in candidate_set]
+        return [[gt for gt in self.get_genotypes_for_candidate(len(v[3]) - 1)] for v in candidate_set]
 
     def create_candidate_haplotype(self, candidate_set, ref):
         all_possible_genotypes = self.get_genotypes_for_candidate_set(candidate_set)
@@ -471,6 +472,11 @@ class CandidateLabeler:
         equivalents = [
             f for f in all_matches if f.match_metrics == best.match_metrics
         ]
+
+        if len(equivalents) > 1:
+            sys.stderr.write("HAPLOTYPE TIED:\n")
+            for eq in equivalents:
+                sys.stderr.write(str(eq) + "\n")
 
         return equivalents[0]
 

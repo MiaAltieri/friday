@@ -96,6 +96,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                 reference_index = ref_position - ref_start - 1;
                 region_index = ref_position - region_start - 1;
 
+
                 if (ref_position - 1 >= region_start &&
                     ref_position - 1 <= region_end) {
                     // process insert allele here
@@ -117,7 +118,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                         AlleleMap[region_index].insert(candidate_alt);
 //                    allele_lengths[region_index] = max(allele_lengths[region_index], 1);
 
-//                    cout<<"INSERT: "<<ref_position-1<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
+//                    cout<<"INSERT: "<<ref_position-1<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<" "<<base_quality<<endl;
                 }
                 read_index += cigar.length;
                 break;
@@ -239,7 +240,7 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
         allele_ends[i] = 1;
         // first figure out the longest delete
         for (auto &candidate: AlleleMap[i]) {
-            int freq_can = 0;
+            double freq_can = 0.0;
             if (coverage[i] > 0)
                 freq_can = 100.0 * ((double) AlleleFrequencyMap[candidate] / (double) coverage[i]);
 
@@ -290,7 +291,7 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
                 positional_record.read_support_alleles.push_back(ReadSupportMap[candidate]);
 
 //                positional_candidates.push_back(new_candidate);
-
+//
 //                cout << "CANDIDATE: " << i + this->region_start << " " << candidate.allele.ref << " " << candidate.pos_end << " "
 //                     << alt_allele << " " << " " << AlleleFrequencyMap[candidate]
 //                     << " " << coverage[i] << " "<< freq_can << endl;
