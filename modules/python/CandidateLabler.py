@@ -343,7 +343,7 @@ class CandidateLabeler:
                 yield haplotypes, genotypes
 
     def get_genotypes_for_candidate_set(self, candidate_set):
-        return [[gt for gt in self.get_genotypes_for_candidate(len(v[3]) - 1)] for v in candidate_set]
+        return [{gt for gt in self.get_genotypes_for_candidate(len(v[3]) - 1)} for v in candidate_set]
 
     def create_candidate_haplotype(self, candidate_set, ref):
         all_possible_genotypes = self.get_genotypes_for_candidate_set(candidate_set)
