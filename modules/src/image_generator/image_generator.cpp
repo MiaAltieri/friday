@@ -7,32 +7,12 @@
 ImageGenerator::ImageGenerator(string reference_sequence,
                                string chromosome_name,
                                long long ref_start,
-                               long long ref_end,
-                               map<long long, PositionalCandidateRecord> all_positional_candidates) {
+                               long long ref_end) {
     this->reference_sequence = reference_sequence;
     this->chromosome_name = chromosome_name;
     this->ref_start = ref_start;
     this->ref_end = ref_end;
-    this->all_positional_candidates = all_positional_candidates;
     this->global_base_color = {{'C', 50}, {'T', 100}, {'G', 150}, {'A', 200}, {'*', 250}, {'.', 10}, {'N', 10}};
-}
-
-void ImageGenerator::set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf) {
-    this->pos_vcf = pos_vcf;
-}
-
-int ImageGenerator::get_which_allele(long long pos, string ref, string alt, int alt_type) {
-    if(all_positional_candidates.find(pos) == all_positional_candidates.end()) return 0;
-
-    PositionalCandidateRecord candidate = all_positional_candidates[pos];
-
-    if(candidate.ref.compare(ref) == 0 && candidate.alt1.compare(alt) == 0 && candidate.alt1_type == alt_type) {
-        return 1;
-    }
-    if(candidate.ref.compare(ref) == 0 && candidate.alt2.compare(alt) == 0 && candidate.alt2_type == alt_type) {
-        return 2;
-    }
-    return 0;
 }
 
 string ImageGenerator::get_reference_sequence(long long st_pos, long long end_pos) {
@@ -47,16 +27,20 @@ string ImageGenerator::get_reference_sequence(long long st_pos, long long end_po
     return ref_seq;
 }
 
-vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long &read_start, long long &read_end) {
+vector<vector<int> > ImageGenerator::read_to_image_row(type_read read,
+                                                       long long &read_start,
+                                                       long long &read_end,
+                                                       bool supports_allele) {
     read_start = -1;
     read_end = -1;
     vector<vector<int> > image_row;
 
-    int base_color, base_qual_color, map_qual_color, strand_color, alt1_color, alt2_color, mismatch_color;
+    int base_color, base_qual_color, map_qual_color, strand_color, support_color, mismatch_color;
     map_qual_color = (double) PileupPixels::MAX_COLOR_VALUE *
                      ((double) min(read.mapping_quality, PileupPixels::MAP_QUALITY_CAP) /
                       (double)PileupPixels::MAP_QUALITY_CAP);
-    strand_color = read.flags.is_reverse ? 240 : 70;
+    strand_color = read.flags.is_reverse ? PileupPixels::MAX_COLOR_VALUE : 70;
+    support_color = supports_allele ? PileupPixels::MAX_COLOR_VALUE : 70;
 
     int read_index = 0;
     long long ref_position = read.pos;
@@ -93,26 +77,9 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         base_qual_color = (double)PileupPixels::MAX_COLOR_VALUE *
                                           ((double)min(read.base_qualities[read_index], PileupPixels::BASE_QUALITY_CAP)
                                            / (double)PileupPixels::BASE_QUALITY_CAP);
-
-                        // process the SNP allele here
-                        string ref(1, reference_sequence[reference_index]);
-                        string alt(1, read.sequence[read_index]);
-                        int which_allele = get_which_allele(ref_position, ref, alt, AlleleType::SNP_ALLELE);
-                        alt1_color = 50;
-                        alt2_color = 50;
-                        mismatch_color = 250;
-                        if(which_allele == 1) alt1_color = 250;
-                        if(which_allele == 2) alt2_color = 250;
-
-//                        if(read.base_qualities[read_index] >= CandidateFinder_options::min_base_quality) {
-//                            cout << "SNP: " << ref_position << " " << ref << " " << alt << " " << which_allele << " "
-//                                 << int(alt_color) << endl;
-//                        } else {
-//                            cout <<"LOW BASE QUALITY "<<read.base_qualities[read_index]<< " SNP: " << ref_position << " " << ref << " " << alt << " " << which_allele << " "
-//                                 << int(alt_color) << endl;
-//                        }
+                        mismatch_color = PileupPixels::MAX_COLOR_VALUE;
                         image_row.push_back({ base_color, base_qual_color, map_qual_color, strand_color,
-                                              mismatch_color, alt1_color, alt2_color});
+                                              mismatch_color, support_color});
                     } else if(ref_position >= ref_start && ref_position < ref_end) {
                         if(read_start == -1) {
                             read_start = ref_position;
@@ -126,11 +93,9 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                                            / (double)PileupPixels::BASE_QUALITY_CAP);
 
                         base_color = global_base_color[read.sequence[read_index]];
-                        alt1_color = 50;
-                        alt2_color = 50;
-                        mismatch_color = 50;
+                        mismatch_color = 70;
                         image_row.push_back({ base_color, base_qual_color, map_qual_color, strand_color,
-                                              mismatch_color, alt1_color, alt2_color});
+                                              mismatch_color, support_color});
                     }
                     read_index += 1;
                     ref_position += 1;
@@ -151,11 +116,6 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                     read_end = max(read_end, ref_position - 1);
 
                     // process insert allele here
-                    string ref = reference_sequence.substr(reference_index, 1);
-                    string alt;
-                    if(read_index - 1 >= 0) alt = read.sequence.substr(read_index - 1, cigar.length + 1);
-                    else alt = ref + read.sequence.substr(read_index, cigar.length);
-
                     base_qual_color = (double)PileupPixels::MAX_COLOR_VALUE *
                                       ((double)min(base_quality, PileupPixels::BASE_QUALITY_CAP)
                                        / (double)PileupPixels::BASE_QUALITY_CAP);
@@ -165,16 +125,10 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                     if(!image_row.empty()) {
                         image_row.pop_back();
                     }
+                    mismatch_color = PileupPixels::MAX_COLOR_VALUE;
 
-                    int which_allele = get_which_allele(ref_position - 1, ref, alt, AlleleType::INSERT_ALLELE);
-                    alt1_color = 50;
-                    alt2_color = 50;
-                    mismatch_color = 250;
-                    if(which_allele == 1) alt1_color = 250;
-                    if(which_allele == 2) alt2_color = 250;
-
-                    image_row.push_back({ global_base_color['*'], base_qual_color, map_qual_color, strand_color,
-                                          mismatch_color, alt1_color, alt2_color});
+                    image_row.push_back({ base_color, base_qual_color, map_qual_color, strand_color,
+                                          mismatch_color, support_color});
 
 //                    cout<<"INSERT: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<int(alt_color)<<endl;
                 }
@@ -189,10 +143,6 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                 if(ref_position - 1 >= ref_start && ref_position - 1 < ref_end &&
                    ref_position + cigar.length < ref_end) {
                     // process delete allele here
-                    string ref = reference_sequence.substr(ref_position - ref_start - 1, 1);
-                    string alt = ref + reference_sequence.substr(ref_position - ref_start , cigar.length);
-                    Candidate candidate_alt(ref_position - 1, ref_position - 1 + cigar.length, ref, alt,
-                                            AlleleType::DELETE_ALLELE);
                     base_color = global_base_color['.'];
 
                     if(!image_row.empty()) {
@@ -202,12 +152,7 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         read_start = ref_position - 1;
                         read_end = ref_position - 1;
                     }
-                    int which_allele = get_which_allele(ref_position - 1, ref, alt, AlleleType::DELETE_ALLELE);
-                    alt1_color = 50;
-                    alt2_color = 50;
-                    mismatch_color = 250;
-                    if(which_allele == 1) alt1_color = 250;
-                    if(which_allele == 2) alt2_color = 250;
+                    mismatch_color = PileupPixels::MAX_COLOR_VALUE;
 
                     base_qual_color = (double)PileupPixels::MAX_COLOR_VALUE *
                                       ((double)min(20, PileupPixels::BASE_QUALITY_CAP)
@@ -218,10 +163,10 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
                         read_end = max(read_end, ref_position + i);
                         if(i==-1) {
                             image_row.push_back({global_base_color['*'], base_qual_color, map_qual_color, strand_color,
-                                                 mismatch_color, alt1_color, alt2_color});
+                                                 mismatch_color, support_color});
                         }else {
                             image_row.push_back({global_base_color['.'], base_qual_color, map_qual_color, strand_color,
-                                                 mismatch_color, 50, 50});
+                                                 mismatch_color, support_color});
                         }
                     }
 
@@ -240,13 +185,16 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read, long long
     return image_row;
 }
 
-vector<vector<int> > ImageGenerator::get_reference_row(string ref_seq) {
+vector<vector<int> > ImageGenerator::get_reference_row(string ref_seq, int left_pad, int right_pad) {
     vector<vector<int> > reference_row;
+    reference_row.insert(reference_row.end(), left_pad, {0, 0, 0, 0, 0, 0});
     for(auto&base: ref_seq) {
         int base_color = global_base_color[base];
         reference_row.push_back({base_color, PileupPixels::MAX_COLOR_VALUE, PileupPixels::MAX_COLOR_VALUE,
-                                 70, 50, 50, 50});
+                                 70, 70, PileupPixels::MAX_COLOR_VALUE});
     }
+    reference_row.insert(reference_row.end(), right_pad, {0, 0, 0, 0, 0, 0});
+    assert(reference_row.size() == 2 * PileupPixels::CONTEXT_SIZE);
     return reference_row;
 }
 
@@ -255,10 +203,13 @@ long long ImageGenerator::overlap_length_between_ranges(pair<long long, long lon
     return max((long long)0, (min(range_a.second, range_b.second) - max(range_a.first, range_b.first)));
 }
 
-void ImageGenerator::assign_read_to_window(PileupImage& pileup_image,
-                                           vector<vector<int> >& image_row,
-                                           long long read_start,
-                                           long long read_end){
+
+void ImageGenerator::assign_read_to_image(PileupImage& pileup_image,
+                                          vector<vector<int> >& image_row,
+                                          long long read_start,
+                                          long long read_end,
+                                          int left_pad,
+                                          int right_pad) {
     if(pileup_image.image.size() >= PileupPixels::IMAGE_HEIGHT) return;
     long long read_start_index = 0, read_end_index = image_row.size();
     int left_empties = 0, right_empties = 0;
@@ -283,90 +234,60 @@ void ImageGenerator::assign_read_to_window(PileupImage& pileup_image,
     vector<vector<int> > core;
     core.insert(core.end(), image_row.begin() + read_start_index, image_row.begin() + read_end_index);
 
-    vector<vector<int> > window_row;
-    window_row.insert(window_row.end(), left_empties, {0, 0, 0, 0, 0, 0, 0});
-    window_row.insert(window_row.end(), core.begin(), core.end());
-    window_row.insert(window_row.end(), right_empties, {0, 0, 0, 0, 0, 0, 0});
+    vector<vector<int> > read_row;
+    read_row.insert(read_row.end(), left_pad, {0, 0, 0, 0, 0, 0});
+    read_row.insert(read_row.end(), left_empties, {0, 0, 0, 0, 0, 0});
+    read_row.insert(read_row.end(), core.begin(), core.end());
+    read_row.insert(read_row.end(), right_empties, {0, 0, 0, 0, 0, 0});
+    read_row.insert(read_row.end(), right_pad, {0, 0, 0, 0, 0, 0});
 
-    pileup_image.image.push_back(window_row);
+    assert(read_row.size() == 2 * PileupPixels::CONTEXT_SIZE);
+
+    pileup_image.image.push_back(read_row);
 }
 
 
-int ImageGenerator::get_image_label(int gt1, int gt2) {
-    if(gt1 == Genotype::HOM && gt2 == Genotype::HOM) return 0;
-    if(gt1 == Genotype::HET && gt2 == Genotype::HOM) return 1;
-    if(gt1 == Genotype::HOM_ALT && gt2 == Genotype::HOM) return 2;
-    if(gt1 == Genotype::HOM && gt2 == Genotype::HET) return 3;
-    if(gt2 == Genotype::HOM_ALT && gt1 == Genotype::HOM) return 4;
-    if(gt1 == Genotype::HET && gt2 == Genotype::HET) return 5;
-
-    return 0;
-}
-
-vector<int> ImageGenerator::get_window_labels(pair<long long, long long> window) {
-
-    vector<int> window_label;
-    for(long long pos = window.first; pos < window.second; pos++) {
-        if(all_positional_candidates.find(pos) == all_positional_candidates.end()) {
-            window_label.push_back(0);
-            continue;
-        }
-
-        PositionalCandidateRecord candidate = all_positional_candidates[pos];
-        int gt1 = candidate.alt1_gt, gt2 = candidate.alt2_gt;
-        window_label.push_back(get_image_label(gt1, gt2));
-    }
-
-    return window_label;
-}
-
-
-vector<PileupImage> ImageGenerator::create_window_pileups(vector<pair<long long, long long> > windows,
-                                                          vector<type_read> reads, bool train_mode) {
+PileupImage ImageGenerator::create_image(PositionalCandidateRecord candidate,
+                                                 vector< pair<type_read, bool> > reads,
+                                                 int genotype) {
     // container for all the images we will generate
-    vector<PileupImage> pileup_images(windows.size());
-    int inferred_window_size = windows[0].second - windows[0].first + 2 * PileupPixels::CONTEXT_SIZE;
+    PileupImage pileup_image;
+    pileup_image.chromosome_name = candidate.chromosome_name;
+    pileup_image.start_pos = max(ref_start, candidate.pos_start - PileupPixels::CONTEXT_SIZE);
+    pileup_image.end_pos = min(ref_end, candidate.pos_start + PileupPixels::CONTEXT_SIZE);
+    pileup_image.label = genotype;
+
+
+    // calculate how much left padding required so the variant of interest can be in the middle column
+    int left_band = candidate.pos_start - pileup_image.start_pos;
+    int left_pad = PileupPixels::CONTEXT_SIZE - left_band;
+
+    int right_band = pileup_image.end_pos - candidate.pos_start;
+    int right_pad = PileupPixels::CONTEXT_SIZE - right_band;
 
     // initialize all the pileup images with reference sequence
-    for(int i=0; i<windows.size(); i++) {
-        pileup_images[i].set_values(this->chromosome_name,
-                                    windows[i].first - PileupPixels::CONTEXT_SIZE,
-                                    windows[i].second + PileupPixels::CONTEXT_SIZE);
-        string ref_seq = get_reference_sequence(windows[i].first - PileupPixels::CONTEXT_SIZE,
-                                                windows[i].second + PileupPixels::CONTEXT_SIZE);
-        pileup_images[i].image.insert(pileup_images[i].image.end(), PileupPixels::REF_ROW_BAND, get_reference_row(ref_seq));
-        if(train_mode) {
-            pileup_images[i].label = get_window_labels(windows[i]);
-        }
-    }
-    // now iterate through each of the reads and add it to different windows if read overlaps
+    string ref_seq = get_reference_sequence(pileup_image.start_pos, pileup_image.end_pos);
+    pileup_image.image.insert(pileup_image.image.end(), PileupPixels::REF_ROW_BAND,
+                              get_reference_row(ref_seq, left_pad, right_pad));
+//    // now iterate through each of the reads and add it to different windows if read overlaps
+
     for(int i=0; i<reads.size(); i++) {
-        // reads[i].set_read_id(i);
-        vector<int> windows_indices;
-        for(int j=0; j < windows.size(); j++) {
-            if(overlap_length_between_ranges(make_pair(reads[i].pos, reads[i].pos + reads[i].sequence.length() + 1),
-                                             windows[j])) {
-                windows_indices.push_back(j);
-            }
-        }
-        // if the read doesn't overlap with any of the window, then don't convert it
-        if(windows_indices.empty()) continue;
+        type_read read = reads[i].first;
+        bool supported = reads[i].second;
+//        cout<<read.read_id<<" "<<read.pos<<" "<<read.pos_end<<" "<<supported<<endl;
         long long read_start, read_end;
         // convert the read to a pileup row
-        vector<vector<int> > image_row = read_to_image_row(reads[i], read_start, read_end);
-        for(auto&index: windows_indices) {
-            if(read_end < windows[index].first || read_start > windows[index].second) continue;
-            // assign the read to each of the window it overlaps with
-            assign_read_to_window(pileup_images[index], image_row, read_start, read_end);
-        }
+        vector<vector<int> > image_row = read_to_image_row(read, read_start, read_end, supported);
+        assign_read_to_image(pileup_image, image_row, read_start, read_end, left_pad, right_pad);
+//        cout<<start_ref_position<<" "<<end_ref_position<<endl;
     }
     vector<vector<int> > empty_row;
-    empty_row.insert(empty_row.end(), inferred_window_size, {0, 0, 0, 0, 0, 0, 0});
-    for(auto&pileup: pileup_images) {
-        int empties_needed = PileupPixels::IMAGE_HEIGHT - pileup.image.size();
-        if(empties_needed > 0){
-            pileup.image.insert(pileup.image.end(), empties_needed, empty_row);
-        }
+    empty_row.insert(empty_row.end(), PileupPixels::CONTEXT_SIZE * 2, {0, 0, 0, 0, 0, 0});
+
+    int empties_needed = PileupPixels::IMAGE_HEIGHT - pileup_image.image.size();
+    if(empties_needed > 0){
+        pileup_image.image.insert(pileup_image.image.end(), empties_needed, empty_row);
     }
-    return pileup_images;
+    assert(pileup_image.image.size() == PileupPixels::IMAGE_HEIGHT);
+    return pileup_image;
 }

@@ -1,6 +1,7 @@
 from build import FRIDAY
-import numpy as np
+import itertools
 from modules.python.Options import CandidateFinderOptions
+from modules.python.helper.tensor_analyzer import analyze_pileup_image
 
 SNP_CANDIDATE, IN_CANDIDATE, DEL_CANDIDATE = 1, 2, 3
 # Genotype codes
@@ -114,9 +115,25 @@ class PileupGenerator:
 
         return window_label
 
-    def generate_pileup(self, reads, windows, positional_candidates, vcf_path, train_mode):
-        ref_start = max(0, windows[0][0] - CandidateFinderOptions.SAFE_BASES)
-        ref_end = windows[-1][1] + CandidateFinderOptions.SAFE_BASES
+    def get_image_label(self, candidate, selected_allele_indices, train_mode):
+        if not train_mode:
+            return HOM
+
+        gt = candidate.genotype
+        count = 0
+        for t in gt:
+            if t+1 in selected_allele_indices:
+                count += 1
+
+        if count == 1:
+            return HET
+        if count == 2:
+            return HOM_ALT
+        return HOM
+
+    def generate_pileup(self, reads, candidates, train_mode):
+        ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
+        ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
         reference_sequence = self.fasta_handler.get_reference_sequence(self.chromosome_name,
                                                                        ref_start,
                                                                        ref_end)
@@ -125,27 +142,28 @@ class PileupGenerator:
         image_generator = FRIDAY.ImageGenerator(reference_sequence,
                                                 self.chromosome_name,
                                                 ref_start,
-                                                ref_end,
-                                                positional_candidates)
-        if train_mode:
-            vcf_handler = FRIDAY.VCF_handler(vcf_path)
-            positional_vcf = vcf_handler.get_positional_vcf_records(self.chromosome_name, ref_start - 20, ref_end + 20)
-            image_generator.set_positional_vcf(positional_vcf)
+                                                ref_end)
 
-        pileup_images = image_generator.create_window_pileups(windows, reads, train_mode)
+        all_candidate_images = []
+        for i, candidate in enumerate(candidates):
+            candidate_alleles = candidate.alternate_alleles
+            ref = candidate.ref
+            for combination in itertools.combinations([candidate.ref] + candidate_alleles, 2):
+                allele_set = set(combination) - {ref}
+                allele_indices = [candidate_alleles.index(x) for x in allele_set]
+                supported_read_ids = list(set(r_id for i in allele_indices for r_id in candidate.read_support_alleles[i]))
+                pileup_reads = []
+                for read in reads:
+                    if read.pos_end <= candidate.pos_start or read.pos > candidate.pos_start:
+                        continue
+                    if read.read_id in supported_read_ids:
+                        pileup_reads.append((read, 1))
+                    else:
+                        pileup_reads.append((read, 0))
+                image_genotype = self.get_image_label(candidate, allele_indices, train_mode)
+                candidate_image = image_generator.create_image(candidate, pileup_reads, image_genotype)
+                candidate_image.name = candidate.name + "_" + ''.join([str(x) for x in allele_indices])
+                candidates[i].add_image_name(candidate_image.name)
+                all_candidate_images.append(candidate_image)
 
-        # labels = []
-        # for window in windows:
-        #     labels.append(self.get_window_label(window, positional_candidates, positional_vcf))
-        # print("GOT READS")
-        #
-        # for i, pileup_image in enumerate(pileup_images):
-        #     print(pileup_image.chromosome_name, pileup_image.start_pos, pileup_image.end_pos)
-        #     for label in pileup_image.label:
-        #         print(label, end='')
-        #     print()
-        #     for image_row in pileup_image.image:
-        #         self.decode_image_row(image_row)
-        #
-        # exit()
-        return pileup_images
+        return candidates, all_candidate_images

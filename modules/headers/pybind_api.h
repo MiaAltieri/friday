@@ -11,6 +11,7 @@
 #include "local_reassembly/active_region_finder.h"
 #include "local_reassembly/debruijn_graph.h"
 #include "local_reassembly/aligner.h"
+#include "image_generator/image_generator.h"
 #include "candidate_finding/candidate_finder.h"
 
 #include <pybind11/pybind11.h>
@@ -19,19 +20,18 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(FRIDAY, m) {
-//        py::class_<PileupImage>(m, "PileupImage")
-//            .def(py::init<>())
-//            .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
-//            .def_readwrite("start_pos", &PileupImage::start_pos)
-//            .def_readwrite("end_pos", &PileupImage::end_pos)
-//            .def_readwrite("image", &PileupImage::image)
-//            .def_readwrite("label", &PileupImage::label);
+        py::class_<PileupImage>(m, "PileupImage")
+            .def(py::init<>())
+            .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
+            .def_readwrite("start_pos", &PileupImage::start_pos)
+            .def_readwrite("end_pos", &PileupImage::end_pos)
+            .def_readwrite("image", &PileupImage::image)
+            .def_readwrite("label", &PileupImage::label)
+            .def_readwrite("name", &PileupImage::name);
 
-//        py::class_<ImageGenerator>(m, "ImageGenerator")
-//            .def(py::init<const string &, const string &, long long &, long long&,
-//        map<long long, PositionalCandidateRecord> & >())
-//            .def("create_window_pileups", &ImageGenerator::create_window_pileups)
-//            .def("set_positional_vcf", &ImageGenerator::set_positional_vcf);
+        py::class_<ImageGenerator>(m, "ImageGenerator")
+            .def(py::init<const string &, const string &, long long &, long long&>())
+            .def("create_image", &ImageGenerator::create_image);
 
 //        py::class_<SummaryGenerator>(m, "SummaryGenerator")
 //            .def(py::init<const string &, const string &, long long &, long long &>())
@@ -43,6 +43,8 @@ PYBIND11_MODULE(FRIDAY, m) {
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
             .def("set_genotype", &PositionalCandidateRecord::set_genotype)
+            .def("add_image_name", &PositionalCandidateRecord::add_image_name)
+            .def_readwrite("name", &PositionalCandidateRecord::name)
             .def_readwrite("chromosome_name", &PositionalCandidateRecord::chromosome_name)
             .def_readwrite("pos_start", &PositionalCandidateRecord::pos_start)
             .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
@@ -54,6 +56,7 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("genotype", &PositionalCandidateRecord::genotype)
             .def_readwrite("read_support_alleles", &PositionalCandidateRecord::read_support_alleles)
             .def_readwrite("depth", &PositionalCandidateRecord::depth)
+            .def_readwrite("image_names", &PositionalCandidateRecord::image_names)
             .def_readwrite("labeled", &PositionalCandidateRecord::labeled);
 
 

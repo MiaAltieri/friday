@@ -11,12 +11,14 @@ class CandidateFinderOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 10
     MIN_MAP_QUALITY = 10
-    SAFE_BASES = 50
+    SAFE_BASES = 200
 
 
 class ImageSizeOptions(object):
-    IMAGE_HEIGHT = 100
-    IMAGE_CHANNELS = 7
+    IMAGE_HEIGHT = 300
+    IMAGE_CHANNELS = 6
+    IMAGE_LENGTH = 300
+
     MIN_BASES_ON_LEFT = 0
     BASES_ON_RIGHT = 1
     CONTEXT_SIZE = 10

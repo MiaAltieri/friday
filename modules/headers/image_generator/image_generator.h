@@ -14,9 +14,9 @@ namespace PileupPixels {
     static constexpr int MAX_COLOR_VALUE = 254;
     static constexpr int BASE_QUALITY_CAP = 40;
     static constexpr int MAP_QUALITY_CAP = 60;
-    static constexpr int REF_ROW_BAND = 1;
-    static constexpr int IMAGE_HEIGHT = 100;
-    static constexpr int CONTEXT_SIZE = 10;
+    static constexpr int REF_ROW_BAND = 5;
+    static constexpr int IMAGE_HEIGHT = 300;
+    static constexpr int CONTEXT_SIZE = 150;
 };
 
 
@@ -31,7 +31,8 @@ struct PileupImage {
     long long start_pos;
     long long end_pos;
     vector<vector<vector<int> > >image;
-    vector<int> label;
+    int label;
+    string name;
     void set_values(string chromosome_name, long long start_pos, long long end_pos) {
         this->chromosome_name = chromosome_name;
         this->start_pos = start_pos;
@@ -44,32 +45,30 @@ class ImageGenerator {
     long long ref_end;
     string chromosome_name;
     string reference_sequence;
-    map<long long, PositionalCandidateRecord> all_positional_candidates;
     map<char, int> global_base_color;
-    map<long long, vector<type_positional_vcf_record> > pos_vcf;
 public:
     ImageGenerator(string reference_sequence,
                    string chromosome_name,
                    long long ref_start,
-                   long long ref_end,
-                   map<long long, PositionalCandidateRecord> all_positional_candidates);
-    void set_positional_vcf(map<long long, vector<type_positional_vcf_record> > pos_vcf);
+                   long long ref_end);
 
     string get_reference_sequence(long long st_pos, long long end_pos);
-    vector<vector<int> > read_to_image_row(type_read read, long long &read_start, long long &read_end);
-    vector<vector<int> > get_reference_row(string ref_seq);
-    int get_image_label(int gt1, int gt2);
-    vector<int> get_window_labels(pair<long long, long long> window);
-    vector<PileupImage> create_window_pileups(vector<pair<long long, long long> > windows,
-                                              vector<type_read> reads,
-                                              bool train_mode);
-    int get_which_allele(long long pos, string ref, string alt, int alt_type);
+    vector<vector<int> > read_to_image_row(type_read read,
+                                           long long &read_start,
+                                           long long &read_end,
+                                           bool supports_allele);
+    vector<vector<int> > get_reference_row(string ref_seq, int left_pad, int right_pad);
+    PileupImage create_image(PositionalCandidateRecord candidate,
+                             vector< pair<type_read, bool> > reads,
+                             int genotype);
+    void assign_read_to_image(PileupImage& pileup_image,
+                              vector<vector<int> >& image_row,
+                              long long read_start,
+                              long long read_end,
+                              int left_pad,
+                              int right_pad);
     long long overlap_length_between_ranges(pair<long long, long long> range_a,
                                             pair<long long, long long> range_b);
-    void assign_read_to_window(PileupImage& pileup_image,
-                               vector<vector<int> >& image_row,
-                               long long read_start,
-                               long long read_end);
 };
 
 

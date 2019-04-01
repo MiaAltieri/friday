@@ -18,6 +18,7 @@ from modules.python.PileupGenerator import PileupGenerator
 from modules.python.Options import ImageSizeOptions
 from modules.python.CandidateLabler import CandidateLabeler
 from modules.python.AlignmentSummarizer import AlignmentSummarizer
+from modules.python.DataStore import DataStore
 """
 This script creates training images from BAM, Reference FASTA and truth VCF file. The process is:
 - Find candidates that can be variants
@@ -111,7 +112,7 @@ class View:
         if range_b[0] >= range_a[0] and range_b[1] <= range_a[1]: return True
         return False
 
-    def parse_region(self, start_position, end_position, local_alignment_flag, log_file):
+    def parse_region(self, start_position, end_position, local_alignment_flag):
         """
         Generate labeled images of a given region of the genome
         :param start_position: Start position of the region
@@ -124,8 +125,7 @@ class View:
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                log_file.write("NO CONFIDENT INTERVALS FOUND" + "\n")
-                return 0, 0, None
+                return 0, 0, None, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -135,10 +135,8 @@ class View:
 
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
 
-        log_file.write("REALIGNMENT DONE. READS FOUND: " + str(len(reads)) + "\n")
-
         if not reads:
-            return 0, 0, None
+            return 0, 0, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -146,29 +144,18 @@ class View:
                                            end_position)
         candidate_list = candidate_finder.find_candidates(reads)
 
-        log_file.write("CANDIDATE FINDING DONE. CANDIDATES FOUND: " + str(len(candidate_list)) + "\n")
         if not candidate_list:
-            return len(reads), 0, None
+            return len(reads), 0, None, None
 
-        # image_generator = PileupGenerator(self.fasta_handler,
-        #                                   self.chromosome_name,
-        #                                   start_position,
-        #                                   end_position)
+        image_generator = PileupGenerator(self.fasta_handler,
+                                          self.chromosome_name,
+                                          start_position,
+                                          end_position)
 
         # # get all labeled candidate sites
         if self.train_mode:
-            log_file.write("CONFIDENT INTERVALS: " + str(len(confident_intervals_in_region)) + "\n")
-            # for a dry run, do not subset the windows
-            # <<begin>>
-            # for window in sequence_windows:
-            #     confident_windows.append(window)
-            #
-            #     for candidate_pos in range(window[0], window[1]):
-            #         confident_records.append(candidate_map[candidate_pos])
-            # <<end>>
-
             if not candidate_list:
-                return 0, 0, None
+                return 0, 0, None, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(candidate_list, start_position, end_position,
@@ -183,16 +170,13 @@ class View:
 
             labeled_candidates = confident_candidates
 
-            log_file.write("LABELING DONE. SITES: " + str(len(labeled_candidates)) + "\n")
-
-            # pileup_images = image_generator.generate_pileup(reads,
-            #                                                 confident_windows,
-            #                                                 candidate_map,
-            #                                                 self.vcf_path,
-            #                                                 train_mode=True)
+            candidates, pileup_images = image_generator.generate_pileup(reads,
+                                                                        labeled_candidates,
+                                                                        train_mode=True)
             # alignment_summarizer.create_summary(confident_windows, reads, candidate_map, train_mode=True)
-            # log_file.write("IMAGE GENERATION DONE. SITES: " + str(len(pileup_images)) + "\n")
-            return len(reads), len(labeled_candidates), labeled_candidates
+            # for candidate in candidates:
+            #     print(candidate.chromosome_name, candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles, candidate.image_names, candidate.genotype)
+            return len(reads), len(candidates), candidates, pileup_images
         else:
             print("NOT IMPLEMENTED")
             pass
@@ -222,13 +206,11 @@ def chromosome_level_parallelization(chr_list,
                                      vcf_file,
                                      confident_intervals,
                                      output_path,
-                                     image_path,
                                      total_threads,
                                      thread_id,
                                      train_mode,
                                      downsample_rate,
                                      local_alignment,
-                                     log_dir,
                                      max_size=1000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
@@ -242,7 +224,8 @@ def chromosome_level_parallelization(chr_list,
     """
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
-    log_file = open(log_dir + str(thread_id) + ".log", 'w')
+    data_file_name = output_path + "images" + "_thread_" + str(thread_id) + ".hdf"
+    data_file = DataStore(data_file_name, mode='w')
 
     for chr_name, region in chr_list:
         if not region:
@@ -264,87 +247,31 @@ def chromosome_level_parallelization(chr_list,
                     confident_tree=confident_intervals,
                     downsample_rate=downsample_rate)
 
-        smry = None
-
-        if intervals:
-            smry = open(output_path + chr_name + "_" + str(thread_id) + "_summary.csv", 'w')
-
         start_time = time.time()
         total_reads_processed = 0
         total_candidates = 0
 
         for count, interval in enumerate(intervals):
             _start, _end = interval
-            log_file.write(str(count+1)+"/"+str(len(intervals))+": INTERVAL " + str(interval) + "\n")
-            n_reads, n_candidates, candidates = view.parse_region(start_position=_start,
-                                                                  end_position=_end,
-                                                                  local_alignment_flag=local_alignment,
-                                                                  log_file=log_file)
+            n_reads, n_candidates, candidates, images = view.parse_region(start_position=_start,
+                                                                          end_position=_end,
+                                                                          local_alignment_flag=local_alignment)
 
-            log_file.write("READS: " + str(n_reads) + " CANDIDATES: " + str(n_candidates) + "\n")
             total_reads_processed += n_reads
             total_candidates += n_candidates
 
             if not candidates:
-                log_file.write("DONE WITH NO CANDIDATES" + "\n")
                 continue
 
-            # all_images = []
-            # all_labels = []
-            # image_file_name = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".h5py"
-
-            # save the dictionary
-            # dictionary_file_path = image_path + chr_name + "_" + str(thread_id) + "_" + str(_start) + "_" + str(_end) + ".pkl"
-            # global_index = 0
-
-            # save the images
-            for i, candidate in enumerate(candidates):
-                summary_string = candidate.chromosome_name + "\t" + str(candidate.pos_start) + "\t" + str(candidate.pos_end) + "\t" + candidate.ref + "\n"
-                summary_string = summary_string + '\t'.join(candidate.alternate_alleles) + "\n"
-                summary_string = summary_string + '\t'.join([str(x) for x in candidate.genotype]) + "\n"
-                smry.write(summary_string)
-                # global_index += 1
-
-            # log_file.write("SAVING IMAGES" + "\n")
-            # with h5py.File(image_file_name, mode='w') as hdf5_file:
-            #     # the image dataset we save. The index name in h5py is "images".
-            #     img_dset = hdf5_file.create_dataset("images", (len(all_images),) + (ImageSizeOptions.IMAGE_HEIGHT,
-            #                                                                         ImageSizeOptions.SEQ_LENGTH,
-            #                                                                         ImageSizeOptions.IMAGE_CHANNELS), np.uint8,
-            #                                         compression='gzip')
-            #     label_dataset = hdf5_file.create_dataset("labels", (len(all_labels),) + (ImageSizeOptions.LABEL_LENGTH,), np.uint8)
-            #     # save the images and labels to the h5py file
-            #     img_dset[...] = all_images
-            #     label_dataset[...] = all_labels
-
-            # log_file.write("SAVING DICTIONARIES" + "\n")
-            # with open(dictionary_file_path, 'wb') as f:
-            #     try:
-            #         pickle.dump(candidate_map, f, pickle.HIGHEST_PROTOCOL)
-            #     except pickle.PicklingError:
-            #         print('Error when serializing data',
-            #               "CHROMOSOME: ", chr_name,
-            #               "INTERVAL: ", interval,
-            #               "THREAD ID: ", thread_id,)
-
-            log_file.write("DONE" + "\n")
-            # del all_images, all_labels, candidate_map
-
-            # if thread_id == 2:
-            #     print("CHROMOSOME: ", chr_name,
-            #           "INTERVAL: ", interval,
-            #           "READS: ", n_reads,
-            #           "WINDOWS: ", n_windows,
-            #           "THREAD ID: ", thread_id,
-            #           "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-            #           math.ceil(time.time()-start_time) % 60, "SEC")
+            data_file.write_images(images)
+            data_file.write_candidates(candidates)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
               "READS: ", total_reads_processed,
               "CANDIDATES: ", total_candidates,
               "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-              math.ceil(time.time()-start_time) % 60, "SEC")
+              math.ceil(time.time()-start_time), "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):
@@ -383,13 +310,7 @@ def handle_output_directory(output_dir, thread_id):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    internal_directory = "images_" + str(thread_id) + "/"
-    image_dir = output_dir + internal_directory
-
-    if not os.path.exists(image_dir):
-        os.mkdir(image_dir)
-
-    return output_dir, image_dir
+    return output_dir
 
 
 def boolean_string(s):
@@ -496,12 +417,6 @@ if __name__ == '__main__':
         help="Path to output directory."
     )
     parser.add_argument(
-        "--log_dir",
-        type=str,
-        default="outputs/logs/",
-        help="Path to output directory."
-    )
-    parser.add_argument(
         "--threads",
         type=int,
         default=5,
@@ -528,6 +443,7 @@ if __name__ == '__main__':
     )
     FLAGS, unparsed = parser.parse_known_args()
     chr_list = get_chromosme_list(FLAGS.chromosome_name)
+
     # if the confident bed is not empty then create the tree
     if FLAGS.bed:
         confident_intervals = View.build_chromosomal_interval_trees(FLAGS.bed)
@@ -537,13 +453,7 @@ if __name__ == '__main__':
     if FLAGS.train_mode and (not confident_intervals or not FLAGS.vcf):
         sys.stderr.write(TextColor.RED + "ERROR: TRAIN MODE REQUIRES --vcf AND --bed TO BE SET.\n" + TextColor.END)
         exit(1)
-    output_dir, image_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
-
-    log_dir = FLAGS.log_dir
-    if log_dir[-1] != "/":
-        log_dir += "/"
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
+    output_dir = handle_output_directory(os.path.abspath(FLAGS.output_dir), FLAGS.thread_id)
 
     chromosome_level_parallelization(chr_list,
                                      FLAGS.bam,
@@ -551,11 +461,9 @@ if __name__ == '__main__':
                                      FLAGS.vcf,
                                      confident_intervals,
                                      output_dir,
-                                     image_dir,
                                      FLAGS.threads,
                                      FLAGS.thread_id,
                                      FLAGS.train_mode,
                                      FLAGS.downsample_rate,
-                                     FLAGS.local_alignment,
-                                     log_dir)
+                                     FLAGS.local_alignment)
 

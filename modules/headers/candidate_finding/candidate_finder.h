@@ -94,18 +94,24 @@ struct PositionalCandidateRecord{
     string chromosome_name;
     long long pos_start;
     long long pos_end;
+    string name;
     string ref;
     vector<string> alternate_alleles;
     vector<int> allele_depths;
     vector<double> allele_frequencies;
     vector<int> genotype {0, 0};
     vector< vector<string> > read_support_alleles;
+    vector<string> image_names;
 
     int depth;
     bool labeled;
 
     void set_genotype(vector<int> gt) {
         genotype = gt;
+    }
+
+    void add_image_name(string image_name) {
+        image_names.push_back(image_name);
     }
 };
 

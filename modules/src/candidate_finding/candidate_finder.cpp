@@ -257,6 +257,8 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
         positional_record.pos_start = this->region_start + i;
         positional_record.pos_end = positional_record.pos_start + allele_ends[i];
         positional_record.depth = coverage[i];
+        positional_record.name = chromosome_name + "_" +
+                                 to_string(positional_record.pos_start) + "_" + to_string(positional_record.pos_end);
         if(positional_record.pos_end > this->ref_end) {
             // goes beyond the reference regions skip;
             continue;

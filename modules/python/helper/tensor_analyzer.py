@@ -14,10 +14,22 @@ def get_strand_color(is_rev):
     """
     is_rev = int(math.ceil(is_rev))
     if is_rev == 254:
-        return 'R'
-    if is_rev == 240:
         return '1'
     elif is_rev == 70:
+        return '0'
+    else:
+        return ' '
+
+def get_support_color(is_supported):
+    """
+    Get color for forward and reverse reads
+    :param is_rev: True if read is reversed
+    :return:
+    """
+    is_supported = int(math.ceil(is_supported))
+    if is_supported == 254:
+        return '1'
+    elif is_supported == 70:
         return '0'
     else:
         return ' '
@@ -75,9 +87,9 @@ def get_mismatch_or_alt_color(alt_type_color):
     alt_type_color = int(math.ceil(alt_type_color))
     if alt_type_color == 0:
         return ' '
-    elif alt_type_color == 50:
+    elif alt_type_color == 70:
         return '0'
-    elif alt_type_color == 250:
+    elif alt_type_color == 254:
         return '1'
 
 
@@ -122,6 +134,47 @@ def analyze_tensor(image):
         for j in range(img_w):
             print(get_mismatch_or_alt_color(image[6][j][i]), end='')
         print()
+
+
+def analyze_pileup_image(image):
+    # base_color, base_quality_color, map_qual_color, strand_color, alt_color
+    img_c, img_w, img_h = len(image[0][0]), len(image[0]), len(image)
+    img_h = 50
+    print("BASE CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_base_from_color(image[i][j][0]), end='')
+        print()
+
+    print("SUPPORT CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_support_color(image[i][j][5]), end='')
+        print()
+
+    print("MISMATCH CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_mismatch_or_alt_color(image[i][j][4]), end='')
+        print()
+
+    print("BASE QUALITY CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_quality_by_color(image[i][j][1]), end='')
+        print()
+    print("MAPPING QUALITY CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_quality_by_color(image[i][j][2]), end='')
+        print()
+    print("STRAND DIRECTION CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_strand_color(image[i][j][3]), end='')
+        print()
+
+
 
 
 def save_base_quality_array(image):
