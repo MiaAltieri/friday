@@ -120,7 +120,7 @@ class View:
         :return:
         """
         # st_time = time.time()
-        # print("STARTING", start_position, end_position)
+        print("STARTING: ", self.chromosome_name, start_position, end_position)
         confident_intervals_in_region = []
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
@@ -134,9 +134,9 @@ class View:
                                          end_position)
 
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
-
-        if not reads:
-            return 0, 0, None, None
+        print("LOCAL ASSEMBLY DONE FOR: ", self.chromosome_name, start_position, end_position)
+        # returning here to see if local assembly is happening or not
+        return 0, 0, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
