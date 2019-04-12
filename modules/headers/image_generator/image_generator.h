@@ -15,8 +15,8 @@ namespace PileupPixels {
     static constexpr int BASE_QUALITY_CAP = 40;
     static constexpr int MAP_QUALITY_CAP = 60;
     static constexpr int REF_ROW_BAND = 5;
-    static constexpr int IMAGE_HEIGHT = 300;
-    static constexpr int CONTEXT_SIZE = 150;
+    static constexpr int IMAGE_HEIGHT = 50;
+    static constexpr int CONTEXT_SIZE = 25;
 };
 
 

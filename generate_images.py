@@ -134,9 +134,10 @@ class View:
                                          end_position)
 
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
-        print("LOCAL ASSEMBLY DONE FOR: ", self.chromosome_name, start_position, end_position)
+
         # returning here to see if local assembly is happening or not
-        return 0, 0, None, None
+        if not reads:
+            return 0, 0, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -178,8 +179,12 @@ class View:
             #     print(candidate.chromosome_name, candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles, candidate.image_names, candidate.genotype)
             return len(reads), len(candidates), candidates, pileup_images
         else:
-            print("NOT IMPLEMENTED")
-            pass
+            if not candidate_list:
+                return 0, 0, None, None
+            candidates, pileup_images = image_generator.generate_pileup(reads,
+                                                                        candidate_list,
+                                                                        train_mode=False)
+            return len(reads), len(candidates), candidates, pileup_images
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):

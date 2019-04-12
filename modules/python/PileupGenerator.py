@@ -165,5 +165,7 @@ class PileupGenerator:
                 candidate_image.name = candidate.name + "_" + ''.join([str(x) for x in allele_indices])
                 candidates[i].add_image_name(candidate_image.name)
                 all_candidate_images.append(candidate_image)
+                # analyze_pileup_image(candidate_image.image)
+                # exit()
 
         return candidates, all_candidate_images
