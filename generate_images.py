@@ -120,7 +120,7 @@ class View:
         :return:
         """
         # st_time = time.time()
-        print("STARTING: ", self.chromosome_name, start_position, end_position)
+        # print("STARTING: ", self.chromosome_name, start_position, end_position)
         confident_intervals_in_region = []
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
