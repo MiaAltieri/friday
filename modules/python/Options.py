@@ -25,7 +25,7 @@ class ImageSizeOptions(object):
     SEQ_LENGTH = CONTEXT_SIZE * 2 + BASES_ON_RIGHT + MIN_BASES_ON_LEFT
     LABEL_LENGTH = BASES_ON_RIGHT + MIN_BASES_ON_LEFT
 
-    TOTAL_LABELS = 6
+    TOTAL_LABELS = 3
 
 
 class AlingerOptions(object):

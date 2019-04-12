@@ -31,36 +31,26 @@ class TrainModule:
         self.retrain_model = retrain_model
         self.retrain_model_path = retrain_model_path
         self.stats_dir = stats_dir
-        # {'decoder_l2': 0.00015319806441507918, 'decoder_lr': 2.2421208818352337e-05,
-        #  'encoder_l2': 0.0003300310353944881, 'encoder_lr': 9.473332315675838e-05}
-        self.hidden_size = 512
-        self.gru_layers = 3
-        self.encoder_lr = 9.473332315675838e-05
-        self.encoder_l2 = 0.0003300310353944881
-        self.decoder_lr = 2.2421208818352337e-05
-        self.decoder_l2 = 0.00015319806441507918
+        self.lr = 9.473332315675838e-05
+        self.l2 = 0.0003300310353944881
 
     def train_model(self):
         # train a model
-        enc_model, dec_model, enc_optimizer, dec_optimizer, stats_dictionary = train(self.train_file,
-                                                                                     self.test_file,
-                                                                                     self.batch_size,
-                                                                                     self.epochs,
-                                                                                     self.gpu_mode,
-                                                                                     self.num_workers,
-                                                                                     self.retrain_model,
-                                                                                     self.retrain_model_path,
-                                                                                     self.gru_layers,
-                                                                                     self.hidden_size,
-                                                                                     self.encoder_lr,
-                                                                                     self.encoder_l2,
-                                                                                     self.decoder_lr,
-                                                                                     self.decoder_l2,
-                                                                                     self.model_dir,
-                                                                                     self.stats_dir,
-                                                                                     train_mode=True)
+        model, optimizer, stats_dictionary = train(self.train_file,
+                                                   self.test_file,
+                                                   self.batch_size,
+                                                   self.epochs,
+                                                   self.gpu_mode,
+                                                   self.num_workers,
+                                                   self.retrain_model,
+                                                   self.retrain_model_path,
+                                                   self.lr,
+                                                   self.l2,
+                                                   self.model_dir,
+                                                   self.stats_dir,
+                                                   train_mode=True)
 
-        return enc_model, dec_model, enc_optimizer, dec_optimizer, stats_dictionary
+        return model, optimizer, stats_dictionary
 
 
 def handle_output_directory(output_dir):
