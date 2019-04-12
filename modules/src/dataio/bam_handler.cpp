@@ -277,7 +277,6 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
                         modified_cigar_length = 0;
                         for(int i=0; i < cigar_len ; i++) {
                             if(current_read_pos <= stop) {
-                                running_sequence_index += 1;
                                 modified_cigar_length += 1;
                                 pos_end += 1;
                             } else break;

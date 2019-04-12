@@ -161,7 +161,6 @@ class PileupGenerator:
                     else:
                         pileup_reads.append((read, 0))
                 image_genotype = self.get_image_label(candidate, allele_indices, train_mode)
-                print(self.chromosome_name, ref_start, ref_end)
                 candidate_image = image_generator.create_image(candidate, pileup_reads, image_genotype)
                 candidate_image.name = candidate.name + "_" + ''.join([str(x) for x in allele_indices])
                 candidates[i].add_image_name(candidate_image.name)
