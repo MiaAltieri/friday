@@ -216,7 +216,7 @@ def chromosome_level_parallelization(chr_list,
                                      train_mode,
                                      downsample_rate,
                                      local_alignment,
-                                     max_size=1000):
+                                     max_size=10000):
     """
     This method takes one chromosome name as parameter and chunks that chromosome in max_threads.
     :param chr_list: List of chromosomes to be processed
