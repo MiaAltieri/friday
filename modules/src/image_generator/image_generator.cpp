@@ -240,7 +240,6 @@ void ImageGenerator::assign_read_to_image(PileupImage& pileup_image,
     read_row.insert(read_row.end(), core.begin(), core.end());
     read_row.insert(read_row.end(), right_empties, {0, 0, 0, 0, 0, 0});
     read_row.insert(read_row.end(), right_pad, {0, 0, 0, 0, 0, 0});
-
     assert(read_row.size() == 2 * PileupPixels::CONTEXT_SIZE);
 
     pileup_image.image.push_back(read_row);
@@ -278,6 +277,9 @@ PileupImage ImageGenerator::create_image(PositionalCandidateRecord candidate,
         long long read_start, read_end;
         // convert the read to a pileup row
         vector<vector<int> > image_row = read_to_image_row(read, read_start, read_end, supported);
+        if(read_end < pileup_image.start_pos || read_end > pileup_image.end_pos) {
+            continue;
+        }
         assign_read_to_image(pileup_image, image_row, read_start, read_end, left_pad, right_pad);
 //        cout<<start_ref_position<<" "<<end_ref_position<<endl;
     }
