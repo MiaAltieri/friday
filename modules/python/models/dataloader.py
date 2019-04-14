@@ -28,7 +28,7 @@ class SequenceDataset(Dataset):
 
     def __init__(self, image_directory, transform=None):
         hdf_files = get_file_paths_from_directory(image_directory)
-
+        self.transform = transforms.Compose([transforms.ToTensor()])
         file_image_pair = []
         for hdf5_filepath in hdf_files:
             hdf5_file = h5py.File(hdf5_filepath, 'r')
@@ -49,8 +49,13 @@ class SequenceDataset(Dataset):
 
         image = np.array(image, dtype=np.uint8)
         label = hdf5_file['images'][chromosome_name]['labels'][hdf5_index]
-        label = np.array(label, dtype=np.int)
+        label = np.array(label, dtype=np.long)
         hdf5_file.close()
+
+        image = self.transform(image)
+        image = image.transpose(1, 2)
+
+        label = torch.from_numpy(label).type(torch.LongTensor)
 
         return image, label
 
