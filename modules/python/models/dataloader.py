@@ -38,7 +38,6 @@ class SequenceDataset(Dataset):
                     file_image_pair.append((hdf5_filepath, chromosome_name, i))
             hdf5_file.close()
 
-        self.transform = transforms.Compose([transforms.ToTensor()])
         self.all_images = file_image_pair
 
     def __getitem__(self, index):
@@ -52,8 +51,6 @@ class SequenceDataset(Dataset):
         label = hdf5_file['images'][chromosome_name]['labels'][hdf5_index]
         label = np.array(label, dtype=np.int)
         hdf5_file.close()
-
-        image = self.transform(image)
 
         return image, label
 

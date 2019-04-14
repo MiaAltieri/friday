@@ -121,15 +121,33 @@ class PileupGenerator:
             return HOM
 
         gt = candidate.genotype
-        count = 0
-        for t in gt:
-            if t+1 in selected_allele_indices:
-                count += 1
+        gt1, gt2 = gt
+        # 0, 0
+        if gt1 == 0 and gt2 == 0:
+            return HOM
+        # 0, 1
+        if gt1 == 0:
+            if gt2 - 1 in selected_allele_indices:
+                return HET
+        # 1, 0
+        if gt2 == 0:
+            if gt1 - 1 in selected_allele_indices:
+                return HET
+        # 1, 1/ 2, 2
+        if gt1 == gt2:
+            if gt1 - 1 in selected_allele_indices:
+                return HOM_ALT
 
-        if count == 1:
-            return HET
-        if count == 2:
+        # 1, 2 [both are present]
+        if gt1 - 1 in selected_allele_indices and gt2 - 1 in selected_allele_indices:
             return HOM_ALT
+        # only 1 is present
+        if gt1 - 1 in selected_allele_indices:
+            return HET
+        # only 2 is present
+        if gt2 - 1 in selected_allele_indices:
+            return HET
+
         return HOM
 
     @staticmethod
