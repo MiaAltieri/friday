@@ -125,7 +125,7 @@ class View:
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -137,7 +137,7 @@ class View:
 
         # returning here to see if local assembly is happening or not
         if not reads:
-            return 0, 0, None, None
+            return 0, 0, None, None, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -146,7 +146,7 @@ class View:
         candidate_list = candidate_finder.find_candidates(reads)
 
         if not candidate_list:
-            return len(reads), 0, None, None
+            return len(reads), 0, None, None, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
                                           self.chromosome_name,
@@ -156,7 +156,7 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             if not candidate_list:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(candidate_list, start_position, end_position,
@@ -180,7 +180,7 @@ class View:
             return len(reads), len(candidates), candidates, image_names, image_labels, images
         else:
             if not candidate_list:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
             candidates, image_names, image_labels, images = image_generator.generate_pileup(reads, candidate_list,
                                                                                             train_mode=False)
             return len(reads), len(candidates), candidates, image_names, image_labels, images
