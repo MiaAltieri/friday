@@ -46,6 +46,9 @@ class ImageGenerator {
     string chromosome_name;
     string reference_sequence;
     map<char, int> global_base_color;
+    map< pair<string, bool> ,  vector<vector<int> > > read_row_cache;
+    map<string, long long> read_start_cache;
+    map<string, long long> read_end_cache;
 public:
     ImageGenerator(string reference_sequence,
                    string chromosome_name,

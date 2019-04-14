@@ -31,6 +31,13 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read,
                                                        long long &read_start,
                                                        long long &read_end,
                                                        bool supports_allele) {
+
+    pair<string, bool> read_id = make_pair(read.read_id, supports_allele);
+    if(read_row_cache.find(read_id) != read_row_cache.end()) {
+        read_start = read_start_cache[read.read_id];
+        read_end = read_end_cache[read.read_id];
+        return read_row_cache[read_id];
+    }
     read_start = -1;
     read_end = -1;
     vector<vector<int> > image_row;
@@ -182,6 +189,9 @@ vector<vector<int> > ImageGenerator::read_to_image_row(type_read read,
 
         }
     }
+    read_row_cache[read_id]=image_row;
+    read_start_cache[read.read_id] = read_start;
+    read_end_cache[read.read_id] = read_end;
     return image_row;
 }
 
@@ -273,15 +283,14 @@ PileupImage ImageGenerator::create_image(PositionalCandidateRecord candidate,
     for(int i=0; i<reads.size(); i++) {
         type_read read = reads[i].first;
         bool supported = reads[i].second;
-//        cout<<read.read_id<<" "<<read.pos<<" "<<read.pos_end<<" "<<supported<<endl;
+//        cout<<read.read_id<<" "<<read.pos<<" "<<read.pos_end<<" "<<supported<<" "<<pileup_image.start_pos<<" "<<pileup_image.end_pos<<endl;
         long long read_start, read_end;
         // convert the read to a pileup row
         vector<vector<int> > image_row = read_to_image_row(read, read_start, read_end, supported);
-        if(read_end < pileup_image.start_pos || read_end > pileup_image.end_pos) {
+        if(read_end < pileup_image.start_pos || read_start > pileup_image.end_pos) {
             continue;
         }
         assign_read_to_image(pileup_image, image_row, read_start, read_end, left_pad, right_pad);
-//        cout<<start_ref_position<<" "<<end_ref_position<<endl;
     }
     vector<vector<int> > empty_row;
     empty_row.insert(empty_row.end(), PileupPixels::CONTEXT_SIZE * 2, {0, 0, 0, 0, 0, 0});

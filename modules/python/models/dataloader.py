@@ -54,7 +54,6 @@ class SequenceDataset(Dataset):
         hdf5_file.close()
 
         image = self.transform(image)
-        image = image.transpose(1, 2)
 
         return image, label
 

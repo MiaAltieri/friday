@@ -194,7 +194,4 @@ class PileupGenerator:
                 all_image_label_view.append(candidate_image.label)
                 all_image_list_view.append(np.array(candidate_image.image, dtype=np.uint8))
 
-                # analyze_pileup_image(candidate_image.image)
-                # exit()
-
         return all_candidate_list_view, all_image_name_view, all_image_label_view, all_image_list_view
