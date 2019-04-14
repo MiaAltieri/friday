@@ -1,7 +1,7 @@
 class ActiveRegionOptions(object):
     MIN_REGION_SIZE = 80
     MAX_REGION_SIZE = 1000
-    REGION_EXPANSION = 25
+    REGION_EXPANSION = 20
     MIN_MAPPING_QUALITY = 20
     MIN_BASE_QUALITY = 20
     # the linear regression model is used inside C++ code

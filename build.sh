@@ -4,6 +4,7 @@
 mkdir build
 cd build
 
-cmake .. && make
+cmake ..
+make -j 8
 cd ..
 # python3 main.py

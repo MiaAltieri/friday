@@ -256,6 +256,8 @@ def chromosome_level_parallelization(chr_list,
         total_reads_processed = 0
         total_candidates = 0
 
+        all_candidates = []
+        all_images = []
         for count, interval in enumerate(intervals):
             _start, _end = interval
             n_reads, n_candidates, candidates, images = view.parse_region(start_position=_start,
@@ -267,9 +269,11 @@ def chromosome_level_parallelization(chr_list,
 
             if not candidates:
                 continue
+            all_candidates.extend(candidates)
+            all_images.extend(images)
 
-            data_file.write_images(images)
-            data_file.write_candidates(candidates)
+        data_file.write_candidates(all_candidates, chr_name)
+        data_file.write_images(all_images, chr_name)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,

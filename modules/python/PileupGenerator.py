@@ -1,6 +1,7 @@
 from build import FRIDAY
 import itertools
 from modules.python.Options import CandidateFinderOptions
+import numpy as np
 from modules.python.helper.tensor_analyzer import analyze_pileup_image
 
 SNP_CANDIDATE, IN_CANDIDATE, DEL_CANDIDATE = 1, 2, 3
@@ -131,6 +132,28 @@ class PileupGenerator:
             return HOM_ALT
         return HOM
 
+    @staticmethod
+    def get_candidate_list_view(candidate):
+        return (candidate.chromosome_name,
+                candidate.pos_start,
+                candidate.pos_end,
+                candidate.name,
+                candidate.ref,
+                np.array([i for i in candidate.alternate_alleles]),
+                np.array(candidate.allele_depths),
+                np.array(candidate.allele_frequencies),
+                np.array(candidate.genotype),
+                np.array([i for i in candidate.image_names]))
+
+    @staticmethod
+    def get_image_list_view(image):
+        return (image.chromosome_name,
+                image.start_pos,
+                image.end_pos,
+                image.label,
+                image.name,
+                np.array(image.image, dtype=np.uint8))
+
     def generate_pileup(self, reads, candidates, train_mode):
         ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
         ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
@@ -144,6 +167,8 @@ class PileupGenerator:
                                                 ref_start,
                                                 ref_end)
 
+        all_candidate_list_view = list()
+        all_image_list_view = list()
         all_candidate_images = []
         for i, candidate in enumerate(candidates):
             candidate_alleles = candidate.alternate_alleles
@@ -165,7 +190,11 @@ class PileupGenerator:
                 candidate_image.name = candidate.name + "_" + ''.join([str(x) for x in allele_indices])
                 candidates[i].add_image_name(candidate_image.name)
                 all_candidate_images.append(candidate_image)
+
+                all_candidate_list_view.append(self.get_candidate_list_view(candidate))
+                all_image_list_view.append(self.get_image_list_view(candidate_image))
+
                 # analyze_pileup_image(candidate_image.image)
                 # exit()
 
-        return candidates, all_candidate_images
+        return all_candidate_list_view, all_image_list_view

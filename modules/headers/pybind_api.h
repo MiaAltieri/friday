@@ -9,11 +9,10 @@
 #include "dataio/bam_handler.h"
 #include "dataio/vcf_handler.h"
 #include "local_reassembly/active_region_finder.h"
-#include "local_reassembly/debruijn_graph.h"
 #include "local_reassembly/aligner.h"
 #include "image_generator/image_generator.h"
 #include "candidate_finding/candidate_finder.h"
-
+#include "local_reassembly/debruijn_boost.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
@@ -155,16 +154,9 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def("align_reads", &ReadAligner::align_reads);
 
         // Debruijn graph class
-        py::class_<DeBruijnGraph>(m, "DeBruijnGraph")
-            .def(py::init<const long long &, const long long &>())
-            .def_readwrite("current_hash_value", &DeBruijnGraph::current_hash_value)
-            .def_readwrite("node_hash_int_to_str", &DeBruijnGraph::node_hash_int_to_str)
-            .def_readwrite("good_nodes", &DeBruijnGraph::good_nodes)
-            .def_readwrite("out_nodes", &DeBruijnGraph::out_nodes)
-            .def_readwrite("edges", &DeBruijnGraph::edges)
-
-            .def("generate_haplotypes", &DeBruijnGraph::generate_haplotypes)
-            .def("find_min_k_from_ref", &DeBruijnGraph::find_min_k_from_ref);
+        py::class_<DeBruijnGraphHelper>(m, "DebruijnGraphHelper")
+            .def(py::init<>())
+            .def("Build", &DeBruijnGraphHelper::Build);
 
         // data structure for sequence name and their length
         py::class_<ActiveRegionFinder>(m, "ActiveRegionFinder")
