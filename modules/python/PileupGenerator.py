@@ -147,12 +147,7 @@ class PileupGenerator:
 
     @staticmethod
     def get_image_list_view(image):
-        return (image.chromosome_name,
-                image.start_pos,
-                image.end_pos,
-                image.label,
-                image.name,
-                np.array(image.image, dtype=np.uint8))
+        return image.label, image.name, np.array(image.image, dtype=np.uint8)
 
     def generate_pileup(self, reads, candidates, train_mode):
         ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
@@ -168,6 +163,8 @@ class PileupGenerator:
                                                 ref_end)
 
         all_candidate_list_view = list()
+        all_image_name_view = list()
+        all_image_label_view = list()
         all_image_list_view = list()
         all_candidate_images = []
         for i, candidate in enumerate(candidates):
@@ -192,9 +189,12 @@ class PileupGenerator:
                 all_candidate_images.append(candidate_image)
 
                 all_candidate_list_view.append(self.get_candidate_list_view(candidate))
-                all_image_list_view.append(self.get_image_list_view(candidate_image))
+
+                all_image_name_view.append(candidate_image.name)
+                all_image_label_view.append(candidate_image.label)
+                all_image_list_view.append(np.array(candidate_image.image, dtype=np.uint8))
 
                 # analyze_pileup_image(candidate_image.image)
                 # exit()
 
-        return all_candidate_list_view, all_image_list_view
+        return all_candidate_list_view, all_image_name_view, all_image_label_view, all_image_list_view

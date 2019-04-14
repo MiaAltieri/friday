@@ -32,9 +32,10 @@ class SequenceDataset(Dataset):
         file_image_pair = []
         for hdf5_filepath in hdf_files:
             hdf5_file = h5py.File(hdf5_filepath, 'r')
-            image_names = hdf5_file['images'].keys()
-            for image_name in image_names:
-                file_image_pair.append((hdf5_filepath, image_name))
+            chromosome_names = hdf5_file['images'].keys()
+            for chromosome_name in chromosome_names:
+                for i in range(0, hdf5_file['images'][chromosome_name]['images'].shape[0]):
+                    file_image_pair.append((hdf5_filepath, chromosome_name, i))
             hdf5_file.close()
 
         self.transform = transforms.Compose([transforms.ToTensor()])
@@ -42,12 +43,13 @@ class SequenceDataset(Dataset):
 
     def __getitem__(self, index):
         # load the image
-        hdf5_filepath, image_name = self.all_images[index]
+        hdf5_filepath, chromosome_name, hdf5_index = self.all_images[index]
 
         hdf5_file = h5py.File(hdf5_filepath, 'r')
-        image = hdf5_file['images'][image_name]['image']
+        image = hdf5_file['images'][chromosome_name]['images'][hdf5_index]
+
         image = np.array(image, dtype=np.uint8)
-        label = hdf5_file['images'][image_name]['label']
+        label = hdf5_file['images'][chromosome_name]['labels'][hdf5_index]
         label = np.array(label, dtype=np.int)
         hdf5_file.close()
 

@@ -49,22 +49,27 @@ class DataStore(object):
         self._meta = self.meta
         self._meta.update(meta)
 
-    def write_images(self, images, chromosome_name):
+    def write_images(self, names, labels, images, chromosome_name):
         if 'friday_images' not in self.meta:
             self.meta['friday_images'] = set()
 
-        image_datatype = np.dtype([('chromosome_name', h5py.special_dtype(vlen=str)),
-                                   ('start_pos', np.uint64),
-                                   ('end_pos', np.uint64),
-                                   ('label', np.uint8),
-                                   ('name', h5py.special_dtype(vlen=str)),
-                                   ('image', h5py.special_dtype(vlen=np.uint8))])
+        img_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'images'),
+                                                    (len(images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+                                                                      ImageSizeOptions.IMAGE_LENGTH,
+                                                                      ImageSizeOptions.IMAGE_CHANNELS),
+                                                    np.uint8,
+                                                    compression='gzip')
 
-        data_array = np.array(images, dtype=image_datatype)
-        dataset = self.file_handler.create_dataset('{}/{}/'.format(self._image_path_, chromosome_name),
-                                                   (len(images),), dtype=image_datatype)
+        label_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'labels'),
+                                                      (len(labels),), np.uint8)
 
-        dataset[...] = data_array
+        name_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_,
+                                                                       chromosome_name, 'image_names'),
+                                                     (len(names),), h5py.special_dtype(vlen=str))
+
+        img_dset[...] = images
+        label_dset[...] = labels
+        name_dset[...] = names
 
     def write_candidates(self, candidates, chromosome_name):
         if 'friday_candidates' not in self.meta:
