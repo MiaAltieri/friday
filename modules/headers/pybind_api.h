@@ -207,6 +207,7 @@ PYBIND11_MODULE(FRIDAY, m) {
         py::class_<BAM_handler>(m, "BAM_handler")
             .def(py::init<const string &>())
             .def("get_chromosome_sequence_names", &BAM_handler::get_chromosome_sequence_names)
+            .def("get_sample_names", &BAM_handler::get_sample_names)
             .def("get_chromosome_sequence_names_with_length", &BAM_handler::get_chromosome_sequence_names_with_length)
             .def("get_reads", &BAM_handler::get_reads);
 

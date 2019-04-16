@@ -10,9 +10,32 @@ import math
 import itertools
 from modules.python.Options import VariantPostProcessingOptions
 from modules.python.OverlappingVariantSolver import OverLappingVariantSolver
+
 Candidate = collections.namedtuple('Candidate', 'chromosome_name pos_start pos_end ref '
                                                 'alternate_alleles allele_depths '
-                                                'allele_frequencies genotype qual gq')
+                                                'allele_frequencies genotype qual gq predictions')
+
+
+def get_quals(predictions, prediction_index):
+    perror = 1.0 - min(predictions[prediction_index], 1.0 - 1e-15)
+    if perror < 0.0 or perror > 1.0:
+        # need to raise stuff, this should be replaced
+        sys.stderr.write(TextColor.RED + "ERROR: INVALID PERROR VALUE: " + str(perror) + TextColor. END)
+        exit()
+
+    gq = -10.0 * math.log10(perror)
+
+    perrqual = 1.0 - min(sum(predictions[1:]), 1.0 - 1e-15)
+    if perrqual < 0.0 or perrqual > 1.0:
+        # need to raise stuff, this should be replaced
+        sys.stderr.write(TextColor.RED + "ERROR: INVALID QUAL VALUE: " + str(perrqual) + TextColor. END)
+        exit()
+    qual = -10.0 * math.log10(perrqual)
+    rounded_qual = round(qual, 8)
+
+    return gq, rounded_qual
+
+
 
 
 class PostProcessVariants:
@@ -60,25 +83,7 @@ class PostProcessVariants:
 
         return image_name_prediction_dict
 
-    @staticmethod
-    def get_quals(predictions, prediction_index):
-        perror = 1.0 - min(predictions[prediction_index], 1.0 - 1e-15)
-        if perror < 0.0 or perror > 1.0:
-            # need to raise stuff, this should be replaced
-            sys.stderr.write(TextColor.RED + "ERROR: INVALID PERROR VALUE: " + str(perror) + TextColor. END)
-            exit()
 
-        gq = -10.0 * math.log10(perror)
-
-        perrqual = 1.0 - min(sum(predictions[1:]), 1.0 - 1e-15)
-        if perrqual < 0.0 or perrqual > 1.0:
-            # need to raise stuff, this should be replaced
-            sys.stderr.write(TextColor.RED + "ERROR: INVALID QUAL VALUE: " + str(perrqual) + TextColor. END)
-            exit()
-        qual = -10.0 * math.log10(perrqual)
-        rounded_qual = round(qual, 8)
-
-        return gq, rounded_qual
 
     def get_genotype_for_single_allelic_site(self, predictions):
         genotype_index = np.argmax(np.array(predictions))
@@ -89,8 +94,13 @@ class PostProcessVariants:
         elif genotype_index == 2:
             gt = [1, 1]
 
-        gq, qual = self.get_quals(np.array(predictions), genotype_index)
-        return gt, gq, qual
+        preds = defaultdict(float)
+        preds[(0, 0)] = predictions[0]
+        preds[(0, 1)] = predictions[1]
+        preds[(1, 1)] = predictions[2]
+
+        gq, qual = get_quals(np.array(predictions), genotype_index)
+        return gt, gq, qual, preds
 
     def get_callable_alleles_from_multialleleic_sites(self, predictions):
         callable_alleles = []
@@ -100,7 +110,7 @@ class PostProcessVariants:
         for allele_indices, prediction in predictions:
             if len(allele_indices) == 1:
                 genotype_index = np.argmax(np.array(prediction))
-                gq, qual = self.get_quals(np.array(prediction), genotype_index)
+                gq, qual = get_quals(np.array(prediction), genotype_index)
 
                 if qual < VariantPostProcessingOptions.MULTI_ALLELE_QUAL_THRESHOLD:
                     removable_alleles.append(allele_indices[0])
@@ -158,9 +168,9 @@ class PostProcessVariants:
 
         genotype_index = int(np.argmax(np.array(predictions)))
         gt = list(genotypes[genotype_index])
-        gq, qual = self.get_quals(predictions, genotype_index)
+        gq, qual = get_quals(predictions, genotype_index)
 
-        return gt, gq, qual
+        return gt, gq, qual, genotype_predictions
 
     def get_canonical_variants_from_candidates(self, candidate_set, image_name_to_prediction):
 
@@ -194,29 +204,29 @@ class PostProcessVariants:
                 # THESE ARE EASY TO SOLVE JUST CONVERT THE PREDICTION TO QUAL VALUES
                 # AND SEE IF THE VALUE IS GREATER OR NOT
 
-                genotype, gq, qual = self.get_genotype_for_single_allelic_site(predictions[0][1])
+                genotype, gq, qual, preds = self.get_genotype_for_single_allelic_site(predictions[0][1])
                 if genotype == [0, 0] or qual < VariantPostProcessingOptions.SINGLE_QUAL_THRESHOLD:
                     continue
                 else:
                     called_variant = Candidate(chromosome_name, pos_start, pos_end, ref, alternate_alleles,
                                                allele_depths.tolist(), allele_frequencies.tolist(), genotype,
-                                               qual, gq)
+                                               qual, gq, preds)
                     all_called_candidates.append(called_variant)
             else:
                 callable_alleles = self.get_callable_alleles_from_multialleleic_sites(predictions)
-                genotype, gq, qual = self.get_genotype_for_multi_allelic_site(predictions, callable_alleles)
+                genotype, gq, qual, preds = self.get_genotype_for_multi_allelic_site(predictions, callable_alleles)
                 if genotype == [0, 0] or qual < VariantPostProcessingOptions.SINGLE_QUAL_THRESHOLD:
                     continue
                 else:
                     called_variant = Candidate(chromosome_name, pos_start, pos_end, ref, alternate_alleles,
                                                allele_depths.tolist(), allele_frequencies.tolist(), genotype,
-                                               qual, gq)
+                                               qual, gq, preds)
                     all_called_candidates.append(called_variant)
 
         sorted_candidates = sorted(all_called_candidates, key=lambda element: (element[0], element[1], element[2]))
         return sorted_candidates
 
-    def perform_post_processing(self, candidate_hdf5_directory, prediction_hdf_file):
+    def perform_post_processing(self, candidate_hdf5_directory, prediction_hdf_file, vcf_file):
         sys.stderr.write(TextColor.GREEN + "INFO: LOADING CANDIDATES FROM FILES\n" + TextColor.END)
         candidate_by_chromosome = self.get_candidates(candidate_hdf5_directory)
         sys.stderr.write(TextColor.GREEN + "INFO: LOADING PREDICTIONS FROM FILE\n" + TextColor.END)
@@ -230,11 +240,12 @@ class PostProcessVariants:
                                                                             candidate_by_chromosome[chromosome_name],
                                                                             image_name_to_predictions[chromosome_name])
 
-            sys.stderr.write(TextColor.GREEN + "INFO: TOTAL " + str(len(sorted_called_variants)) +
-                             " VARIANTS FOUND IN " + chromosome_name + " INCLUDING OVERLAPPING\n" + TextColor.END)
-
             sys.stderr.write(TextColor.GREEN + "INFO: SOLVING OVERLAPPING VARIANTS\n" + TextColor.END)
             overlap_solver = OverLappingVariantSolver()
-            overlap_solver.solve_overlapping_variants(sorted_called_variants)
+            resolved_variants = overlap_solver.solve_overlapping_variants(sorted_called_variants)
+            sys.stderr.write(TextColor.BLUE + "UPDATE: TOTAL " + str(len(sorted_called_variants)) +
+                             " VARIANTS FOUND IN " + chromosome_name + "\n" + TextColor.END)
+            vcf_file.write_vcf_records(resolved_variants)
+
 
 
