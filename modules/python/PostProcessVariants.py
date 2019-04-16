@@ -62,7 +62,7 @@ class PostProcessVariants:
 
     @staticmethod
     def get_quals(predictions, prediction_index):
-        perror = 1.0 - min(predictions[prediction_index], 1.0 - 1e-14)
+        perror = 1.0 - min(predictions[prediction_index], 1.0 - 1e-15)
         if perror < 0.0 or perror > 1.0:
             # need to raise stuff, this should be replaced
             sys.stderr.write(TextColor.RED + "ERROR: INVALID PERROR VALUE: " + str(perror) + TextColor. END)
@@ -70,12 +70,12 @@ class PostProcessVariants:
 
         gq = -10.0 * math.log10(perror)
 
-        qual = min(sum(predictions[1:]), 1.0)
-        if qual < 0.0 or qual > 1.0:
+        perrqual = 1.0 - min(sum(predictions[1:]), 1.0 - 1e-15)
+        if perrqual < 0.0 or perrqual > 1.0:
             # need to raise stuff, this should be replaced
-            sys.stderr.write(TextColor.RED + "ERROR: INVALID QUAL VALUE: " + str(qual) + TextColor. END)
+            sys.stderr.write(TextColor.RED + "ERROR: INVALID QUAL VALUE: " + str(perrqual) + TextColor. END)
             exit()
-        qual = -10.0 * math.log10(1 - qual)
+        qual = -10.0 * math.log10(perrqual)
         rounded_qual = round(qual, 8)
 
         return gq, rounded_qual
