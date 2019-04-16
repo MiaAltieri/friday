@@ -48,3 +48,8 @@ class DeBruijnGraphOptions(object):
     MIN_BASE_QUALITY = 15
     MIN_MAP_QUALITY = 20
 
+
+class VariantPostProcessingOptions(object):
+    SINGLE_QUAL_THRESHOLD = 1.0
+    MULTI_ALLELE_QUAL_THRESHOLD = 1.0
+

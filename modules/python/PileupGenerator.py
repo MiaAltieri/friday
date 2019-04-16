@@ -188,6 +188,8 @@ class PileupGenerator:
         for i, candidate in enumerate(candidates):
             candidate_alleles = candidate.alternate_alleles
             ref = candidate.ref
+
+            image_allele_combinations = []
             for combination in itertools.combinations([candidate.ref] + candidate_alleles, 2):
                 allele_set = set(combination) - {ref}
                 allele_indices = [candidate_alleles.index(x) for x in allele_set]
@@ -202,14 +204,16 @@ class PileupGenerator:
                         pileup_reads.append((read, 0))
                 image_genotype = self.get_image_label(candidate, allele_indices, train_mode)
                 candidate_image = image_generator.create_image(candidate, pileup_reads, image_genotype)
-                candidate_image.name = candidate.name + "_" + ''.join([str(x) for x in allele_indices])
+                candidate_image.name = candidate.name + "_" + str(''.join([str(x) for x in sorted(allele_indices)]))
                 candidates[i].add_image_name(candidate_image.name)
-                all_candidate_images.append(candidate_image)
 
-                all_candidate_list_view.append(self.get_candidate_list_view(candidate))
+                all_candidate_images.append(candidate_image)
+                image_allele_combinations.append(allele_indices)
 
                 all_image_name_view.append(candidate_image.name)
                 all_image_label_view.append(candidate_image.label)
                 all_image_list_view.append(np.array(candidate_image.image, dtype=np.uint8))
+
+            all_candidate_list_view.append(self.get_candidate_list_view(candidate))
 
         return all_candidate_list_view, all_image_name_view, all_image_label_view, all_image_list_view
