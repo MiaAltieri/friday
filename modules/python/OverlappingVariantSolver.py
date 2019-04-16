@@ -38,7 +38,9 @@ class OverLappingVariantSolver:
         if len(grouped_variant) == 1:
             return grouped_variant[0]
         else:
-            print(grouped_variant)
+            for gv in grouped_variant:
+                print(gv)
+            print("---------------------")
 
     def solve_overlapping_variants(self, sorted_called_variants):
         grouped_variants = self.group_variants(sorted_called_variants)
