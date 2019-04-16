@@ -272,4 +272,6 @@ class OverLappingVariantSolver:
             for variant in self.solve_variant_group(group):
                 solved_variants.append(variant)
 
-        return solved_variants
+        sorted_variants = sorted(solved_variants, key=lambda element: (element[0], element[1], element[2]))
+
+        return sorted_variants

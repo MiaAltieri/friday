@@ -242,10 +242,10 @@ class PostProcessVariants:
 
             sys.stderr.write(TextColor.GREEN + "INFO: SOLVING OVERLAPPING VARIANTS\n" + TextColor.END)
             overlap_solver = OverLappingVariantSolver()
-            resolved_variants = overlap_solver.solve_overlapping_variants(sorted_called_variants)
+            sorted_resolved_variants = overlap_solver.solve_overlapping_variants(sorted_called_variants)
             sys.stderr.write(TextColor.BLUE + "UPDATE: TOTAL " + str(len(sorted_called_variants)) +
                              " VARIANTS FOUND IN " + chromosome_name + "\n" + TextColor.END)
-            vcf_file.write_vcf_records(resolved_variants)
+            vcf_file.write_vcf_records(sorted_resolved_variants)
 
 
 
