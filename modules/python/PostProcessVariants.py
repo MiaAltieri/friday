@@ -172,6 +172,14 @@ class PostProcessVariants:
 
         return gt, gq, qual, genotype_predictions
 
+    # def simplify_multiallelic_site(self, genotype, alternate_alleles):
+    #     new_genotype = [0, 0]
+    #     new_alternate_alleles = []
+    #     print(genotype, alternate_alleles)
+    #     exit()
+
+        return new_genotype, new_alternate_alleles
+
     def get_canonical_variants_from_candidates(self, candidate_set, image_name_to_prediction):
 
         all_called_candidates = []
@@ -186,10 +194,12 @@ class PostProcessVariants:
             candidate_name.add(name)
             # make alternate allele list as a list of strings again
             alternate_alleles = alternate_alleles.strip().replace("[", "").replace("]", "").replace("'", "").split(' ')
+            alternate_alleles = [alt.strip() for alt in alternate_alleles]
 
             # create a map of allelelic prediction combination
             predictions = []
             image_names = image_names.strip().replace("[", "").replace("]", "").replace("'", "").split(' ')
+            image_names = [iname.strip() for iname in image_names]
             for image_name in image_names:
                 if image_name.strip() not in image_name_to_prediction.keys():
                     sys.stderr.write(TextColor.RED + "ERROR: IMAGE PREDICTION DOES NOT EXIST IN DICTIONARY: " +
@@ -218,6 +228,8 @@ class PostProcessVariants:
                 if genotype == [0, 0] or qual < VariantPostProcessingOptions.SINGLE_QUAL_THRESHOLD:
                     continue
                 else:
+                    # genotype, alternate_alleles = self.simplify_multiallelic_site(genotype, alternate_alleles)
+
                     called_variant = Candidate(chromosome_name, pos_start, pos_end, ref, alternate_alleles,
                                                allele_depths.tolist(), allele_frequencies.tolist(), genotype,
                                                qual, gq, preds)
