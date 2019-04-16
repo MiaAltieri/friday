@@ -173,7 +173,7 @@ class PostProcessVariants:
                 # we have already processed this candidate once
                 continue
 
-            candidate_name.add(candidate_name)
+            candidate_name.add(name)
             # make alternate allele list as a list of strings again
             alternate_alleles = alternate_alleles.strip().replace("[", "").replace("]", "").replace("'", "").split(' ')
 
