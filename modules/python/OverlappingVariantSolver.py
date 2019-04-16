@@ -13,6 +13,7 @@ Candidate = collections.namedtuple('Candidate', 'chromosome_name pos_start pos_e
                                                 'alternate_alleles allele_depths '
                                                 'allele_frequencies genotype qual gq predictions')
 
+
 def get_quals(predictions, prediction_index):
     perror = 1.0 - min(predictions[prediction_index], 1.0 - 1e-15)
     if perror < 0.0 or perror > 1.0:
@@ -46,7 +47,16 @@ def allele_indices_with_num_alts(variant, num_alts, ploidy=2):
 
 
 def genotype_likelihood(variant_call, allele_indices):
-    return math.log10(variant_call.predictions[allele_indices])
+    log_prob = None
+    try:
+        log_prob = math.log10(variant_call.predictions[allele_indices])
+    except ValueError:
+        sys.stderr.write(TextColor.RED + "ERROR: PYTHON MATH ERROR math.log10 " +
+                         str(variant_call.predictions[allele_indices]) + "ALLELE INDICIES" + allele_indices)
+        exit()
+
+    return log_prob
+
 
 
 def genotype_likelihood_index(allele_indices):

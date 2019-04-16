@@ -37,7 +37,6 @@ def get_quals(predictions, prediction_index):
 
 
 
-
 class PostProcessVariants:
     @staticmethod
     def get_file_paths_from_directory(directory_path):
@@ -83,9 +82,8 @@ class PostProcessVariants:
 
         return image_name_prediction_dict
 
-
-
-    def get_genotype_for_single_allelic_site(self, predictions):
+    @staticmethod
+    def get_genotype_for_single_allelic_site(predictions):
         genotype_index = np.argmax(np.array(predictions))
 
         gt = [0, 0]
@@ -102,7 +100,8 @@ class PostProcessVariants:
         gq, qual = get_quals(np.array(predictions), genotype_index)
         return gt, gq, qual, preds
 
-    def get_callable_alleles_from_multialleleic_sites(self, predictions):
+    @staticmethod
+    def get_callable_alleles_from_multialleleic_sites(predictions):
         callable_alleles = []
         removable_alleles = []
         highest_qual = -1
@@ -126,7 +125,8 @@ class PostProcessVariants:
 
         return callable_alleles
 
-    def get_genotype_for_multi_allelic_site(self, predictions, callable_alleles):
+    @staticmethod
+    def get_genotype_for_multi_allelic_site(predictions, callable_alleles):
         allele_combination_predictions = defaultdict(lambda: [])
 
         for allele_indices, prediction in predictions:
@@ -172,7 +172,8 @@ class PostProcessVariants:
 
         return gt, gq, qual, genotype_predictions
 
-    def get_canonical_variants_from_candidates(self, candidate_set, image_name_to_prediction):
+    @staticmethod
+    def get_canonical_variants_from_candidates(candidate_set, image_name_to_prediction):
 
         all_called_candidates = []
         candidate_name = set()
