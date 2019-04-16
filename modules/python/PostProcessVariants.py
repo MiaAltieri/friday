@@ -165,10 +165,15 @@ class PostProcessVariants:
     def get_canonical_variants_from_candidates(self, candidate_set, image_name_to_prediction):
 
         all_called_candidates = []
+        candidate_name = set()
         for candidate in candidate_set:
             chromosome_name, pos_start, pos_end, name, ref, alternate_alleles, allele_depths, \
                              allele_frequencies, candidate_genotype, image_names = candidate
+            if name in candidate_name:
+                # we have already processed this candidate once
+                continue
 
+            candidate_name.add(candidate_name)
             # make alternate allele list as a list of strings again
             alternate_alleles = alternate_alleles.strip().replace("[", "").replace("]", "").replace("'", "").split(' ')
 
