@@ -172,8 +172,7 @@ class PostProcessVariants:
 
         return gt, gq, qual, genotype_predictions
 
-    @staticmethod
-    def get_canonical_variants_from_candidates(candidate_set, image_name_to_prediction):
+    def get_canonical_variants_from_candidates(self, candidate_set, image_name_to_prediction):
 
         all_called_candidates = []
         candidate_name = set()
