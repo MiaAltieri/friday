@@ -52,7 +52,7 @@ def genotype_likelihood(variant_call, allele_indices):
         log_prob = math.log10(variant_call.predictions[allele_indices])
     except ValueError:
         sys.stderr.write(TextColor.RED + "ERROR: PYTHON MATH ERROR math.log10 " +
-                         str(variant_call.predictions[allele_indices]) + "ALLELE INDICIES" + allele_indices)
+                         str(variant_call.predictions) + "ALLELE INDICIES" + str(allele_indices))
         exit()
 
     return log_prob
