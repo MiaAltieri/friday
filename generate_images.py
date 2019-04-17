@@ -179,8 +179,8 @@ class View:
             #     print(candidate.chromosome_name, candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles, candidate.image_names, candidate.genotype)
             return len(reads), len(candidates), candidates, image_names, image_labels, images
         else:
-            if not candidate_list:
-                return 0, 0, None, None, None, None
+            # if not candidate_list:
+            return 0, 0, None, None, None, None
             candidates, image_names, image_labels, images = image_generator.generate_pileup(reads, candidate_list,
                                                                                             train_mode=False)
             return len(reads), len(candidates), candidates, image_names, image_labels, images
