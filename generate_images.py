@@ -265,8 +265,8 @@ def chromosome_level_parallelization(chr_list,
             if not candidates:
                 continue
 
-            data_file.write_images(images, chr_name)
-            data_file.write_candidates(candidates, chr_name)
+            # data_file.write_images(images, chr_name)
+            # data_file.write_candidates(candidates, chr_name)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,
