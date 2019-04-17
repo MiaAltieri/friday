@@ -50,8 +50,6 @@ class DataStore(object):
         self._meta.update(meta)
 
     def write_images(self, names, labels, images, chromosome_name):
-        if 'friday_images' not in self.meta:
-            self.meta['friday_images'] = set()
 
         img_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'images'),
                                                     (len(images),) + (ImageSizeOptions.IMAGE_HEIGHT,
@@ -63,8 +61,7 @@ class DataStore(object):
         label_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'labels'),
                                                       (len(labels),), np.uint8)
 
-        name_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_,
-                                                                       chromosome_name, 'image_names'),
+        name_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'image_names'),
                                                      (len(names),), h5py.special_dtype(vlen=str))
 
         img_dset[...] = images
@@ -87,8 +84,7 @@ class DataStore(object):
                                        ('image_names', h5py.special_dtype(vlen=str))])
 
         data_array = np.array(candidates, dtype=candidate_datatype)
-        dataset = self.file_handler.create_dataset('{}/{}/'.format(self._candidate_path_, chromosome_name),
+        dataset = self.file_handler.create_dataset('{}/{}'.format(self._candidate_path_, chromosome_name),
                                                    (len(candidates),), dtype=candidate_datatype)
 
         dataset[...] = data_array
-

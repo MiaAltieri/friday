@@ -21,12 +21,31 @@ namespace py = pybind11;
 PYBIND11_MODULE(FRIDAY, m) {
         py::class_<PileupImage>(m, "PileupImage")
             .def(py::init<>())
+            .def(py::init<const string &, const int &, vector<vector<vector<uint8_t> > > & >())
             .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
             .def_readwrite("start_pos", &PileupImage::start_pos)
             .def_readwrite("end_pos", &PileupImage::end_pos)
             .def_readwrite("image", &PileupImage::image)
             .def_readwrite("label", &PileupImage::label)
-            .def_readwrite("name", &PileupImage::name);
+            .def_readwrite("name", &PileupImage::name)
+            .def(py::pickle(
+                    [](const PileupImage &p) { // __getstate__
+                        /* Return a tuple that fully encodes the state of the object */
+                        return py::make_tuple(p.name, p.label, p.image);
+                    },
+                    [](py::tuple t) { // __setstate__
+                        if (t.size() != 3)
+                            throw std::runtime_error("Invalid state!");
+
+                        /* Create a new C++ instance */
+                        PileupImage p(t[0].cast<string>(), t[1].cast<int>(), t[2].cast<vector<vector<vector<uint8_t> > > >());
+
+                        /* Assign any additional state */
+                        //dp.setExtra(t[1].cast<int>());
+
+                        return p;
+                    }
+            ));
 
         py::class_<ImageGenerator>(m, "ImageGenerator")
             .def(py::init<const string &, const string &, long long &, long long&>())
@@ -41,12 +60,15 @@ PYBIND11_MODULE(FRIDAY, m) {
 //            .def("generate_summary", &SummaryGenerator::generate_summary);
         py::class_<PositionalCandidateRecord>(m, "PositionalCandidateRecord")
             .def(py::init<>())
+            .def(py::init<const string &, long long &, long long&,
+                          const string &, const vector<string> &,
+                          const vector<int> &, const vector<double> &,
+                          const int &, const vector<string> >())
             .def("set_genotype", &PositionalCandidateRecord::set_genotype)
             .def("add_image_name", &PositionalCandidateRecord::add_image_name)
             .def_readwrite("name", &PositionalCandidateRecord::name)
             .def_readwrite("chromosome_name", &PositionalCandidateRecord::chromosome_name)
             .def_readwrite("pos_start", &PositionalCandidateRecord::pos_start)
-            .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
             .def_readwrite("pos_end", &PositionalCandidateRecord::pos_end)
             .def_readwrite("ref", &PositionalCandidateRecord::ref)
             .def_readwrite("alternate_alleles", &PositionalCandidateRecord::alternate_alleles)
@@ -56,7 +78,31 @@ PYBIND11_MODULE(FRIDAY, m) {
             .def_readwrite("read_support_alleles", &PositionalCandidateRecord::read_support_alleles)
             .def_readwrite("depth", &PositionalCandidateRecord::depth)
             .def_readwrite("image_names", &PositionalCandidateRecord::image_names)
-            .def_readwrite("labeled", &PositionalCandidateRecord::labeled);
+            .def_readwrite("labeled", &PositionalCandidateRecord::labeled)
+            .def(py::pickle(
+                    [](const PositionalCandidateRecord &p) { // __getstate__
+                        /* Return a tuple that fully encodes the state of the object */
+                        return py::make_tuple(p.chromosome_name, p.pos_start, p.pos_end,
+                                              p.ref, p.alternate_alleles,
+                                              p.allele_depths, p.allele_frequencies,
+                                              p.depth, p.image_names);
+                    },
+                    [](py::tuple t) { // __setstate__
+                        if (t.size() != 9)
+                            throw std::runtime_error("Invalid state!");
+
+                        /* Create a new C++ instance */
+                        PositionalCandidateRecord p(t[0].cast<string>(), t[1].cast<long long>(), t[2].cast<long long>(),
+                                                    t[3].cast<string>(), t[4].cast< vector<string> >(),
+                                                    t[5].cast<vector<int> >(), t[6].cast<vector<double> >(),
+                                                    t[7].cast<int>(), t[8].cast<vector<string> >());
+
+                        /* Assign any additional state */
+                        //dp.setExtra(t[1].cast<int>());
+
+                        return p;
+                    }
+            ));
 
 
         py::class_<CandidateAllele>(m, "CandidateAllele")
@@ -115,6 +161,7 @@ PYBIND11_MODULE(FRIDAY, m) {
         // Candidate finder
         py::class_<CandidateFinder>(m, "CandidateFinder")
             .def(py::init<const string &, const string &, long long &, long long&, long long&, long long&>())
+            .def_readwrite("position_to_read_map", &CandidateFinder::position_to_read_map)
             .def("find_candidates", &CandidateFinder::find_candidates);
 
         // Alignment CLASS

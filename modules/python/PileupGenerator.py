@@ -2,6 +2,8 @@ from build import FRIDAY
 import itertools
 from modules.python.Options import CandidateFinderOptions
 import numpy as np
+import sys
+import time
 from modules.python.helper.tensor_analyzer import analyze_pileup_image
 
 SNP_CANDIDATE, IN_CANDIDATE, DEL_CANDIDATE = 1, 2, 3
@@ -163,11 +165,7 @@ class PileupGenerator:
                 np.array(candidate.genotype),
                 np.array([i for i in candidate.image_names]))
 
-    @staticmethod
-    def get_image_list_view(image):
-        return image.label, image.name, np.array(image.image, dtype=np.uint8)
-
-    def generate_pileup(self, reads, candidates, train_mode):
+    def generate_pileup(self, reads, candidates, position_to_read_map, train_mode):
         ref_start = max(0, self.region_start - CandidateFinderOptions.SAFE_BASES)
         ref_end = self.region_end + CandidateFinderOptions.SAFE_BASES
         reference_sequence = self.fasta_handler.get_reference_sequence(self.chromosome_name,
@@ -191,19 +189,32 @@ class PileupGenerator:
 
             image_allele_combinations = []
             for combination in itertools.combinations([candidate.ref] + candidate_alleles, 2):
+                # get set of alleles
                 allele_set = set(combination) - {ref}
+                # get the allele indices
                 allele_indices = [candidate_alleles.index(x) for x in allele_set]
-                supported_read_ids = list(set(r_id for i in allele_indices for r_id in candidate.read_support_alleles[i]))
-                pileup_reads = []
-                for read in reads:
-                    if read.pos_end <= candidate.pos_start or read.pos > candidate.pos_start:
-                        continue
-                    if read.read_id in supported_read_ids:
-                        pileup_reads.append((read, 1))
+                # get read indices that support these two alleles
+                supported_read_ids = set(set(r_id for i in allele_indices for r_id in candidate.read_support_alleles[i]))
+                # get all read indices that go through this position
+                all_reads_aligning = position_to_read_map[candidate.pos_start]
+
+                # for the sake of randomization, we mix the supported and unsupported reads
+                read_index_and_support = []
+                for read_index in all_reads_aligning:
+                    if read_index in supported_read_ids:
+                        read_index_and_support.append((read_index, True))
                     else:
-                        pileup_reads.append((read, 0))
+                        read_index_and_support.append((read_index, False))
+
+                read_index_and_support = sorted(read_index_and_support, key=lambda element: (element[0]))
+
+                if not read_index_and_support:
+                    raise ValueError("ERROR: CANDIDATE FOUND WITH NO READS ALIGNING TO IT." + candidate.chromosome_name
+                                     + " " + str(candidate.pos_start) + " " + str(candidate.pos_end) + "\n")
+
                 image_genotype = self.get_image_label(candidate, allele_indices, train_mode)
-                candidate_image = image_generator.create_image(candidate, pileup_reads, image_genotype)
+                candidate_image = image_generator.create_image(candidate, reads, read_index_and_support, image_genotype)
+
                 candidate_image.name = candidate.name + "_" + str(''.join([str(x) for x in sorted(allele_indices)]))
                 candidates[i].add_image_name(candidate_image.name)
 
