@@ -125,7 +125,7 @@ class View:
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -137,7 +137,7 @@ class View:
 
         # returning here to see if local assembly is happening or not
         if not reads:
-            return 0, 0, None, None
+            return 0, 0, None, None, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -146,7 +146,7 @@ class View:
         candidate_list, position_to_read_map = candidate_finder.find_candidates(reads)
 
         if not candidate_list:
-            return len(reads), 0, None, None
+            return len(reads), 0, None, None, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
                                           self.chromosome_name,
@@ -156,7 +156,7 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             if not candidate_list:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(candidate_list, start_position, end_position,
@@ -171,16 +171,18 @@ class View:
 
             labeled_candidates = confident_candidates
 
-            candidates,  images = image_generator.generate_pileup(reads, labeled_candidates, position_to_read_map,
-                                                                  train_mode=True)
+            candidates,  image_names, image_labels, images = image_generator.generate_pileup(reads, labeled_candidates,
+                                                                                             position_to_read_map,
+                                                                                             train_mode=True)
 
-            return len(reads), len(candidates), candidates, images
+            return len(reads), len(candidates), candidates, image_names, image_labels, images
         else:
             if not candidate_list:
-                return 0, 0, None, None
-            candidates, images = image_generator.generate_pileup(reads, candidate_list, position_to_read_map,
-                                                                 train_mode=False)
-            return len(reads), len(candidates), candidates, images
+                return 0, 0, None, None, None, None
+            candidates,  image_names, image_labels, images = image_generator.generate_pileup(reads, candidate_list,
+                                                                                             position_to_read_map,
+                                                                                             train_mode=False)
+            return len(reads), len(candidates), candidates, image_names, image_labels, images
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
@@ -227,8 +229,7 @@ def chromosome_level_parallelization(chr_list,
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
     data_file_name = output_path + "images" + "_thread_" + str(thread_id) + ".hdf"
 
-
-    # data_file = DataStore(data_file_name, mode='w')
+    data_file = DataStore(data_file_name, mode='w')
 
     for chr_name, region in chr_list:
         if not region:
@@ -254,9 +255,14 @@ def chromosome_level_parallelization(chr_list,
         total_reads_processed = 0
         total_candidates = 0
 
+        all_candidates = []
+        all_image_names = []
+        all_image_labels = []
+        all_images = []
         for count, interval in enumerate(intervals):
             _start, _end = interval
-            n_reads, n_candidates, candidates, images = view.parse_region(start_position=_start,
+            n_reads, n_candidates, candidates, image_names, image_labels, images = view.parse_region(
+                                                                          start_position=_start,
                                                                           end_position=_end,
                                                                           local_alignment_flag=local_alignment)
 
@@ -266,18 +272,13 @@ def chromosome_level_parallelization(chr_list,
             if not candidates:
                 continue
 
-            candidate_data_file_name = output_path + "candidates" + "_" + str(chr_name) + "_" + str(interval[0]) + "_" + str(interval[1]) + ".pkl"
-            image_data_file_name = output_path + "images" + "_" + str(chr_name) + "_" + str(interval[0]) + "_" + str(interval[1]) + ".pkl"
+            all_candidates.extend(candidates)
+            all_image_names.extend(image_names)
+            all_image_labels.extend(image_labels)
+            all_images.extend(images)
 
-            with open(candidate_data_file_name, 'wb') as f:
-                pickle.dump(candidates, f, pickle.HIGHEST_PROTOCOL)
-
-            with open(image_data_file_name, 'wb') as f:
-                pickle.dump(images, f, pickle.HIGHEST_PROTOCOL)
-
-
-            # data_file.write_images(images, chr_name)
-            # data_file.write_candidates(candidates, chr_name)
+        data_file.write_candidates(all_candidates, chr_name)
+        data_file.write_images(all_image_names, all_image_labels, all_images, chr_name)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,

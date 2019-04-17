@@ -178,7 +178,10 @@ class PileupGenerator:
                                                 ref_start,
                                                 ref_end)
 
-        all_images = list()
+        all_candidate_list_view = list()
+        all_image_name_view = list()
+        all_image_label_view = list()
+        all_image_list_view = list()
         all_candidate_images = []
         for i, candidate in enumerate(candidates):
             candidate_alleles = candidate.alternate_alleles
@@ -218,6 +221,10 @@ class PileupGenerator:
                 all_candidate_images.append(candidate_image)
                 image_allele_combinations.append(allele_indices)
 
-                all_images.append(candidate_image)
+                all_image_name_view.append(candidate_image.name)
+                all_image_label_view.append(candidate_image.label)
+                all_image_list_view.append(np.array(candidate_image.image, dtype=np.uint8))
 
-        return candidates, all_candidate_images
+            all_candidate_list_view.append(self.get_candidate_list_view(candidate))
+
+        return all_candidate_list_view, all_image_name_view, all_image_label_view, all_image_list_view
