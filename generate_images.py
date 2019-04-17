@@ -226,8 +226,9 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
     data_file_name = output_path + "images" + "_thread_" + str(thread_id) + ".hdf"
+    candidate_data_file_name = output_path + "candidates" + "_thread_" + str(thread_id) + ".pkl"
 
-    data_file = DataStore(data_file_name, mode='w')
+    # data_file = DataStore(data_file_name, mode='w')
 
     for chr_name, region in chr_list:
         if not region:
@@ -265,11 +266,15 @@ def chromosome_level_parallelization(chr_list,
             if not candidates:
                 continue
 
-            candidate_data_file_name = output_path + "candidates" + "_thread_" + str(thread_id) + \
-                                       "_" + str(interval[0]) + "_" + str(interval[1]) + ".pkl"
+            previous_candidates = []
+            if os.path.exists(candidate_data_file_name):
+                # "with" statements are very handy for opening files.
+                with open(candidate_data_file_name, 'rb') as f:
+                    previous_candidates = pickle.load(f)
 
+            previous_candidates.extend(candidates)
             with open(candidate_data_file_name, 'wb') as f:
-                pickle.dump(candidates, f, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(previous_candidates, f, pickle.HIGHEST_PROTOCOL)
 
 
             # data_file.write_images(images, chr_name)
