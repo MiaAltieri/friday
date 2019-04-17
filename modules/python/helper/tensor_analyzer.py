@@ -96,43 +96,42 @@ def get_mismatch_or_alt_color(alt_type_color):
 def analyze_tensor(image):
     # base_color, base_quality_color, map_qual_color, strand_color, alt_color
     img_c, img_w, img_h = image.size()
+
     image = np.array(image.data * 254)
-    img_h = 100
+    img_h = 50
+
     print("BASE CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
-            print(get_base_from_color(image[0][j][i]), end='')
+            print(get_base_from_color(image[0][i][j]), end='')
+        print()
+
+    print("SUPPORT CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_support_color(image[5][i][j]), end='')
+        print()
+
+    print("MISMATCH CHANNEL:")
+    for i in range(img_h):
+        for j in range(img_w):
+            print(get_mismatch_or_alt_color(image[4][i][j]), end='')
         print()
 
     print("BASE QUALITY CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
-            print(get_quality_by_color(image[1][j][i]), end='')
+            print(get_quality_by_color(image[1][i][j]), end='')
         print()
     print("MAPPING QUALITY CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
-            print(get_quality_by_color(image[2][j][i]), end='')
+            print(get_quality_by_color(image[2][i][j]), end='')
         print()
     print("STRAND DIRECTION CHANNEL:")
     for i in range(img_h):
         for j in range(img_w):
-            print(get_strand_color(image[3][j][i]), end='')
-        print()
-    print("MISMATCH CHANNEL:")
-    for i in range(img_h):
-        for j in range(img_w):
-            print(get_mismatch_or_alt_color(image[4][j][i]), end='')
-        print()
-    print("ALT1 CHANNEL:")
-    for i in range(img_h):
-        for j in range(img_w):
-            print(get_mismatch_or_alt_color(image[5][j][i]), end='')
-        print()
-    print("ALT2 CHANNEL:")
-    for i in range(img_h):
-        for j in range(img_w):
-            print(get_mismatch_or_alt_color(image[6][j][i]), end='')
+            print(get_strand_color(image[3][i][j]), end='')
         print()
 
 
@@ -173,8 +172,6 @@ def analyze_pileup_image(image):
         for j in range(img_w):
             print(get_strand_color(image[i][j][3]), end='')
         print()
-
-
 
 
 def save_base_quality_array(image):
@@ -320,42 +317,44 @@ def tensor_to_image(image):
     save_alt2(image)
 
 
+def read_from_hdf5(hdf_filepath):
+    h5_file = h5py.File(hdf_filepath, 'r')
+    file_image_pair = []
+
+    chromosome_names = h5_file['images'].keys()
+    for chromosome_name in chromosome_names:
+        for i in range(0, h5_file['images'][chromosome_name]['images'].shape[0]):
+            file_image_pair.append((hdf_filepath, chromosome_name, i))
+
+    h5_file.close()
+
+    for hdf5_filepath, chromosome_name, h5_index in file_image_pair:
+        hdf5_file = h5py.File(hdf5_filepath, 'r')
+        image = hdf5_file['images'][chromosome_name]['images'][h5_index]
+
+        image = np.array(image, dtype=np.uint8)
+        label = hdf5_file['images'][chromosome_name]['labels'][h5_index]
+        label = np.array(label, dtype=np.int)
+
+        print("VISUALIZING: ", hdf5_filepath, chromosome_name, h5_index)
+        print("LABEL: ", label)
+        transform = transforms.Compose([transforms.ToTensor()])
+        image = transform(image)
+        print(type(image))
+        analyze_tensor(image)
+
+
 if __name__ == '__main__':
     '''
     Processes arguments and performs tasks.
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--tensor_file",
+        "--hdf5_file",
         type=str,
         required=True,
         help="H5PY file path"
     )
-    parser.add_argument(
-        "--index",
-        type=int,
-        required=True,
-        help="Index of image."
-    )
     FLAGS, unparsed = parser.parse_known_args()
-
-    if FLAGS.tensor_file:
-        hdf5_image = FLAGS.tensor_file
-        hdf5_index = FLAGS.index
-        hdf5_file = h5py.File(hdf5_image, 'r')
-
-        image_dataset = hdf5_file['images']
-        image = np.array(image_dataset[hdf5_index], dtype=np.uint8)
-        transform = transforms.Compose([transforms.ToTensor()])
-        image = transform(image)
-        image = image.transpose(1, 2)
-
-        label_dataset = hdf5_file['labels']
-        label = np.array(label_dataset[hdf5_index], dtype=np.long)
-        for l in label:
-            print(l, end='')
-        print()
-        # analyze_tensor(image)
-
-        tensor_to_image(image)
+    read_from_hdf5(FLAGS.hdf5_file)
 

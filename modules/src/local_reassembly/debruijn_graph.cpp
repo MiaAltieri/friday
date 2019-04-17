@@ -85,12 +85,12 @@ bool DeBruijnGraph::check_if_base_ok(char base){
 
 
 void DeBruijnGraph::add_read_to_graph(type_read &read, int kmer_size) {
-    long long read_start_index = max((long long) 0, (region_start - read.pos - 1));
+    long long read_start_index = 0;
 
     int current_position = read_start_index;
     int current_bad_vector_index = 0;
 
-    while(current_position < read.sequence.length() - kmer_size) {
+    while(current_position < read.sequence.length() - kmer_size   && read.sequence.length() > kmer_size) {
         int next_bad_position = read.bad_indicies[current_bad_vector_index] - 1;
         if(next_bad_position - current_position >= kmer_size) {
             int previous_node = get_hash(read.sequence.substr(current_position, kmer_size));

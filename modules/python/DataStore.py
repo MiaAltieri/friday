@@ -49,44 +49,46 @@ class DataStore(object):
         self._meta = self.meta
         self._meta.update(meta)
 
-    def write_images(self, images):
+    def write_images(self, names, labels, images, chromosome_name):
         if 'friday_images' not in self.meta:
             self.meta['friday_images'] = set()
 
-        for image in images:
-            if image.name not in self.meta['friday_images']:
-                # update the meta
-                self.meta['friday_images'].add(image.name)
-                # save all attributes
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'chromosome_name')] = image.chromosome_name
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'start_pos')] = image.start_pos
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'end_pos')] = image.end_pos
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'label')] = image.label
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'name')] = image.name
-                self.file_handler['{}/{}/{}'.format(self._image_path_, image.name, 'image')] = image.image
-                # img_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, image.name, 'image'),
-                #                                             (ImageSizeOptions.IMAGE_HEIGHT,
-                #                                              ImageSizeOptions.IMAGE_LENGTH,
-                #                                              ImageSizeOptions.IMAGE_CHANNELS),
-                #                                              np.uint8, compression='gzip')
-                # img_dset[...] = image.image
+        img_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'images'),
+                                                    (len(images),) + (ImageSizeOptions.IMAGE_HEIGHT,
+                                                                      ImageSizeOptions.IMAGE_LENGTH,
+                                                                      ImageSizeOptions.IMAGE_CHANNELS),
+                                                    np.uint8,
+                                                    compression='gzip')
 
-    def write_candidates(self, candidates):
+        label_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_, chromosome_name, 'labels'),
+                                                      (len(labels),), np.uint8)
+
+        name_dset = self.file_handler.create_dataset('{}/{}/{}'.format(self._image_path_,
+                                                                       chromosome_name, 'image_names'),
+                                                     (len(names),), h5py.special_dtype(vlen=str))
+
+        img_dset[...] = images
+        label_dset[...] = labels
+        name_dset[...] = names
+
+    def write_candidates(self, candidates, chromosome_name):
         if 'friday_candidates' not in self.meta:
             self.meta['friday_candidates'] = set()
-        for candidate in candidates:
-            if candidate.name not in self.meta['friday_candidates']:
-                # update the meta
-                self.meta['friday_candidates'].add(candidate.name)
-                # save all attributes
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'chromosome_name')] = np.string_(candidate.chromosome_name)
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'pos_start')] = candidate.pos_start
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'pos_end')] = candidate.pos_end
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'name')] = np.string_(candidate.name)
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'ref')] = np.string_(candidate.ref)
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'alternate_alleles')] = [np.string_(i) for i in candidate.alternate_alleles]
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'allele_depths')] = candidate.allele_depths
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'allele_frequencies')] = candidate.allele_frequencies
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'genotype')] = candidate.genotype
-                self.file_handler['{}/{}/{}'.format(self._candidate_path_, candidate.name, 'image_names')] = [np.string_(i) for i in candidate.image_names]
+
+        candidate_datatype = np.dtype([('chromosome_name', h5py.special_dtype(vlen=str)),
+                                       ('pos_start', np.uint64),
+                                       ('pos_end', np.uint64),
+                                       ('name', h5py.special_dtype(vlen=str)),
+                                       ('ref', h5py.special_dtype(vlen=str)),
+                                       ('alternate_alleles', h5py.special_dtype(vlen=str)),
+                                       ('allele_depths', h5py.special_dtype(vlen=np.uint32)),
+                                       ('allele_frequencies', h5py.special_dtype(vlen=np.float32)),
+                                       ('genotype', h5py.special_dtype(vlen=np.uint8)),
+                                       ('image_names', h5py.special_dtype(vlen=str))])
+
+        data_array = np.array(candidates, dtype=candidate_datatype)
+        dataset = self.file_handler.create_dataset('{}/{}/'.format(self._candidate_path_, chromosome_name),
+                                                   (len(candidates),), dtype=candidate_datatype)
+
+        dataset[...] = data_array
 

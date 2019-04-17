@@ -120,12 +120,12 @@ class View:
         :return:
         """
         # st_time = time.time()
-        # print("STARTING", start_position, end_position)
+        # print("STARTING: ", self.chromosome_name, start_position, end_position)
         confident_intervals_in_region = []
         if self.train_mode:
             confident_intervals_in_region = self.interval_tree.find(start_position, end_position)
             if not confident_intervals_in_region:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
         local_assembler = LocalAssembler(self.bam_handler,
                                          self.fasta_handler,
@@ -135,8 +135,9 @@ class View:
 
         reads = local_assembler.perform_local_assembly(self.downsample_rate, perform_alignment=local_alignment_flag)
 
+        # returning here to see if local assembly is happening or not
         if not reads:
-            return 0, 0, None, None
+            return 0, 0, None, None, None, None
 
         candidate_finder = CandidateFinder(self.fasta_handler,
                                            self.chromosome_name,
@@ -145,7 +146,7 @@ class View:
         candidate_list = candidate_finder.find_candidates(reads)
 
         if not candidate_list:
-            return len(reads), 0, None, None
+            return len(reads), 0, None, None, None, None
 
         image_generator = PileupGenerator(self.fasta_handler,
                                           self.chromosome_name,
@@ -155,7 +156,7 @@ class View:
         # # get all labeled candidate sites
         if self.train_mode:
             if not candidate_list:
-                return 0, 0, None, None
+                return 0, 0, None, None, None, None
 
             # should summarize and get labels here
             labeled_candidates = self.get_labeled_candidate_sites(candidate_list, start_position, end_position,
@@ -170,16 +171,19 @@ class View:
 
             labeled_candidates = confident_candidates
 
-            candidates, pileup_images = image_generator.generate_pileup(reads,
-                                                                        labeled_candidates,
-                                                                        train_mode=True)
+            candidates, image_names, image_labels, images = image_generator.generate_pileup(reads,
+                                                                                            labeled_candidates,
+                                                                                            train_mode=True)
             # alignment_summarizer.create_summary(confident_windows, reads, candidate_map, train_mode=True)
             # for candidate in candidates:
             #     print(candidate.chromosome_name, candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles, candidate.image_names, candidate.genotype)
-            return len(reads), len(candidates), candidates, pileup_images
+            return len(reads), len(candidates), candidates, image_names, image_labels, images
         else:
-            print("NOT IMPLEMENTED")
-            pass
+            if not candidate_list:
+                return 0, 0, None, None, None, None
+            candidates, image_names, image_labels, images = image_generator.generate_pileup(reads, candidate_list,
+                                                                                            train_mode=False)
+            return len(reads), len(candidates), candidates, image_names, image_labels, images
 
 
 def create_output_dir_for_chromosome(output_dir, chr_name):
@@ -251,20 +255,29 @@ def chromosome_level_parallelization(chr_list,
         total_reads_processed = 0
         total_candidates = 0
 
+        all_candidates = []
+        all_image_names = []
+        all_image_labels = []
+        all_images = []
         for count, interval in enumerate(intervals):
             _start, _end = interval
-            n_reads, n_candidates, candidates, images = view.parse_region(start_position=_start,
-                                                                          end_position=_end,
-                                                                          local_alignment_flag=local_alignment)
+            n_reads, n_candidates, \
+            candidates, image_names, image_labels, images = view.parse_region(start_position=_start,
+                                                                              end_position=_end,
+                                                                              local_alignment_flag=local_alignment)
 
             total_reads_processed += n_reads
             total_candidates += n_candidates
 
             if not candidates:
                 continue
+            all_candidates.extend(candidates)
+            all_image_names.extend(image_names)
+            all_image_labels.extend(image_labels)
+            all_images.extend(images)
 
-            data_file.write_images(images)
-            data_file.write_candidates(candidates)
+        data_file.write_candidates(all_candidates, chr_name)
+        data_file.write_images(all_image_names, all_image_labels, all_images, chr_name)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,

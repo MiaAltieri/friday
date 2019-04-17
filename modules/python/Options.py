@@ -1,7 +1,7 @@
 class ActiveRegionOptions(object):
     MIN_REGION_SIZE = 80
     MAX_REGION_SIZE = 1000
-    REGION_EXPANSION = 25
+    REGION_EXPANSION = 20
     MIN_MAPPING_QUALITY = 20
     MIN_BASE_QUALITY = 20
     # the linear regression model is used inside C++ code
@@ -25,7 +25,7 @@ class ImageSizeOptions(object):
     SEQ_LENGTH = CONTEXT_SIZE * 2 + BASES_ON_RIGHT + MIN_BASES_ON_LEFT
     LABEL_LENGTH = BASES_ON_RIGHT + MIN_BASES_ON_LEFT
 
-    TOTAL_LABELS = 6
+    TOTAL_LABELS = 3
 
 
 class AlingerOptions(object):
@@ -47,4 +47,9 @@ class DeBruijnGraphOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 15
     MIN_MAP_QUALITY = 20
+
+
+class VariantPostProcessingOptions(object):
+    SINGLE_QUAL_THRESHOLD = 1.0
+    MULTI_ALLELE_QUAL_THRESHOLD = 1.0
 

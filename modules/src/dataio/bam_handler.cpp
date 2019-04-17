@@ -99,7 +99,8 @@ vector<string> BAM_handler::get_chromosome_sequence_names() {
     return sequence_names;
 }
 
-vector<type_read> BAM_handler::get_reads(string chromosome, long long start, long long stop, int min_mapq=0, int min_baseq = 0) {
+vector<type_read> BAM_handler::get_reads(string chromosome, long long start, long long stop, int buffer,
+                                         int min_mapq=0, int min_baseq = 0) {
     vector <type_read> reads;
 
     // get the id of the chromosome
@@ -108,6 +109,12 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
     // get the iterator
     hts_itr_t *iter  = sam_itr_queryi(this->idx, tid, start, stop);
 
+    // once the fetch is done then bufferize the start and stop
+    start = start-buffer;
+    if(start < 0) {
+        start = 0;
+    }
+    stop = stop + buffer;
     // initialize an alignment
     bam1_t* alignment = bam_init1();
 
@@ -139,41 +146,162 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         vector<int> bad_bases;
         string read_seq;
 
-        for (int i = 0; i < len; i++) {
-            int base_quality = (int) qual[i];
-            base_qualities.push_back(base_quality);
-            char base = ::toupper(seq_nt16_str[bam_seqi(seqi, i)]);
-            read_seq += base;
-            if(base_quality < min_baseq or
-               (base != 'A' &&
-                base != 'C' &&
-                base != 'G' &&
-                base != 'T')) {
-                bad_bases.push_back(i);
-            }
-        }
-        bad_bases.push_back(read_seq.length() + 1);
+//        for (int i = 0; i < len; i++) {
+//            int base_quality = (int) qual[i];
+//            base_qualities.push_back(base_quality);
+//            char base = ::toupper(seq_nt16_str[bam_seqi(seqi, i)]);
+//            read_seq += base;
+//            if(base_quality < min_baseq or
+//               (base != 'A' &&
+//                base != 'C' &&
+//                base != 'G' &&
+//                base != 'T')) {
+//                bad_bases.push_back(i);
+//            }
+//        }
+//        bad_bases.push_back(read_seq.length() + 1);
 
         // get the cigar operations of the alignment
         uint32_t *cigar = bam_get_cigar(alignment);
         string str_cigar;
         vector <CigarOp> cigar_tuples;
-        long long pos_end = pos;
+        long long pos_start = -1;
+        long long pos_end = -1;
 
+        long long current_read_pos = pos;
+        int current_read_index = 0;
+        int running_sequence_index = 0;
+
+        // this is a bit ambitious, we are cutting all the reads to desired regions so we don't have to deal with ultra-long reads
+        // I am not sure if there are any downside to it, but I would really love the speed-up
         for(int k = 0; k < alignment->core.n_cigar; k++) {
+            // we are going on all cigar operations to cut the reads short
             int cigar_op = bam_cigar_op(cigar[k]);
             int cigar_len = bam_cigar_oplen(cigar[k]);
+            int modified_cigar_length;
+            int cigar_index;
+            if(current_read_pos > stop) {
+                break;
+            }
 
-            CigarOp cigar_instance;
+            switch (cigar_op) {
+                case BAM_CMATCH:
+                case BAM_CDIFF:
+                case BAM_CEQUAL:
+                    cigar_index = 0;
+                    // if the current read position is to the left then we jump forward
+                    if(current_read_pos < start) {
+                        // jump as much as we can but not more than the boundary of start
+                        cigar_index = min(start - current_read_pos, (long long)cigar_len);
+                        current_read_index += cigar_index;
+                        current_read_pos += cigar_index;
+                    }
+                    // once we've made the jump now add each of the elements
+                    modified_cigar_length = 0;
+                    for(int i=cigar_index; i < cigar_len ; i++) {
+                        if(current_read_pos <= stop) {
+                            if(pos_start == -1){
+                                pos_start = current_read_pos;
+                                pos_end = pos_start;
+                            }
+                            // we are adding the base and quality
+                            int base_quality = (int) qual[current_read_index];
+                            base_qualities.push_back(base_quality);
+                            char base = ::toupper(seq_nt16_str[bam_seqi(seqi, current_read_index)]);
+                            read_seq += base;
 
-            cigar_instance.operation = cigar_op;
-            cigar_instance.length = cigar_len;
+                            if(base_quality < min_baseq or
+                               (base != 'A' &&
+                                base != 'C' &&
+                                base != 'G' &&
+                                base != 'T')) {
+                                bad_bases.push_back(running_sequence_index);
+                            }
+                            running_sequence_index += 1;
+                            modified_cigar_length += 1;
+                            pos_end += 1;
+                        } else break;
 
-            if(cigar_op == 0 || cigar_op == 2 || cigar_op == 3 || cigar_op == 7 || cigar_op == 8)
-                pos_end += cigar_len;
+                        current_read_index += 1;
+                        current_read_pos += 1;
+                    }
+                    if(modified_cigar_length > 0) {
+                        // save the cigar tuple now
+                        CigarOp cigar_instance;
 
-            cigar_tuples.push_back(cigar_instance);
+                        cigar_instance.operation = cigar_op;
+                        cigar_instance.length = modified_cigar_length;
+                        cigar_tuples.push_back(cigar_instance);
+                    }
+                    break;
+                case BAM_CSOFT_CLIP:
+                case BAM_CINS:
+                    modified_cigar_length = 0;
+                    // this only happens after the first position, I am also forcing an anchor
+                    if(current_read_pos >= start && current_read_pos <= stop && pos_start != -1) {
+                        for(int i=0; i < cigar_len ; i++) {
+                            // we are adding the base and quality
+                            int base_quality = (int) qual[current_read_index];
+                            base_qualities.push_back(base_quality);
+                            char base = ::toupper(seq_nt16_str[bam_seqi(seqi, current_read_index)]);
+                            read_seq += base;
+
+                            if(base_quality < min_baseq or
+                               (base != 'A' &&
+                                base != 'C' &&
+                                base != 'G' &&
+                                base != 'T')) {
+                                bad_bases.push_back(running_sequence_index);
+                            }
+                            running_sequence_index += 1;
+                            modified_cigar_length += 1;
+                            current_read_index += 1;
+                        }
+
+                    } else {
+                        current_read_index += cigar_len;
+                    }
+                    if(modified_cigar_length > 0) {
+                        // save the cigar tuple now
+                        CigarOp cigar_instance;
+
+                        cigar_instance.operation = cigar_op;
+                        cigar_instance.length = modified_cigar_length;
+                        cigar_tuples.push_back(cigar_instance);
+                    }
+                    break;
+                case BAM_CREF_SKIP:
+                case BAM_CDEL:
+                    modified_cigar_length = 0;
+                    if(current_read_pos >= start && current_read_pos <= stop && pos_start != -1) {
+                        modified_cigar_length = 0;
+                        for(int i=0; i < cigar_len ; i++) {
+                            if(current_read_pos <= stop) {
+                                modified_cigar_length += 1;
+                                pos_end += 1;
+                            } else break;
+
+                            current_read_pos += 1;
+                        }
+
+                    } else {
+                        current_read_pos += cigar_len;
+                    }
+                    if(modified_cigar_length > 0) {
+                        // save the cigar tuple now
+                        CigarOp cigar_instance;
+
+                        cigar_instance.operation = cigar_op;
+                        cigar_instance.length = modified_cigar_length;
+                        cigar_tuples.push_back(cigar_instance);
+                    }
+                    break;
+                case BAM_CHARD_CLIP:
+                    break;
+
+            }
         }
+        bad_bases.push_back(read_seq.length() + 1);
 
         // mapping quality
         int map_quality = alignment->core.qual;
@@ -183,7 +311,7 @@ vector<type_read> BAM_handler::get_reads(string chromosome, long long start, lon
         // set all fetched attributes
         type_read read;
         read.query_name = query_name;
-        read.pos = pos;
+        read.pos = pos_start;
         read.pos_end = pos_end;
         read.sequence = read_seq;
         read.read_id = query_name + '/' + strand_char;

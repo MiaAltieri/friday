@@ -2,8 +2,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.11)
 
 # name of the project is VISION
 PROJECT(friday)
-set (CMAKE_CXX_FLAGS "-fPIC")
-set (CMAKE_C_FLAGS "-fPIC")
+set (CMAKE_CXX_FLAGS "-fPIC -O3")
+set (CMAKE_C_FLAGS "-fPIC -O3")
 
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,13 +24,21 @@ option(INSTALL_DEPENDENCIES
 
 INCLUDE(modules/htslib.cmake)
 INCLUDE(modules/pybind11.cmake)
+INCLUDE(modules/boost.cmake)
+INCLUDE(modules/absl.cmake)
 
 # pybind11 to interface
 pybind11_add_module(FRIDAY ${CMAKE_CURRENT_SOURCE_DIR}/modules/src/pybind_api.cpp)
 
 add_dependencies(FRIDAY htslib)
 
+#include_directories(${Boost_INCLUDE_DIRS})
+#target_link_libraries(FRIDAY ${Boost_LIBRARIES})
+
 # add all the external libraries
+#target_link_libraries(FRIDAY PUBLIC Boost::boost)
+target_link_libraries(FRIDAY PUBLIC Boost::boost)
+target_link_libraries(FRIDAY PUBLIC absl::flat_hash_map)
 target_link_libraries(FRIDAY PRIVATE z)
 target_link_libraries(FRIDAY PRIVATE bz2)
 target_link_libraries(FRIDAY PRIVATE curl)

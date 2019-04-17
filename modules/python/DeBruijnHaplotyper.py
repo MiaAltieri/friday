@@ -40,24 +40,10 @@ class DeBruijnHaplotyper:
     def find_haplotypes(self, reads):
         # get the reference from the fasta file
         reference_sequence = self.fasta_handler.get_reference_sequence(self.contig, self.region_start, self.region_end)
-        min_k, max_k = FRIDAY.DeBruijnGraph.find_min_k_from_ref(reference_sequence,
-                                                                DeBruijnGraphOptions.MIN_K,
-                                                                DeBruijnGraphOptions.MAX_K,
-                                                                DeBruijnGraphOptions.STEP_K)
-        # couldn't build ref without cycle
-        if min_k == -1:
-            return None, None
 
-        # print(reference_sequence)
-        # min_k = 44
-        for kmer_size in range(min_k, max_k+1, DeBruijnGraphOptions.STEP_K):
-            dbg_graph = FRIDAY.DeBruijnGraph(self.region_start, self.region_end)
-            haplotypes = dbg_graph.generate_haplotypes(reference_sequence, reads, kmer_size)
-            # self.visualize(dbg_graph, 'unpruned', False)
-            # break
-            if haplotypes:
-                # print(kmer_size)
-                # self.visualize(dbg_graph, 'pruned', True)
-                return reference_sequence, haplotypes
+        haplotypes = FRIDAY.DebruijnGraphHelper().Build(reference_sequence, reads, self.region_start, self.region_end)
 
-        return reference_sequence, []
+        if not haplotypes:
+            return reference_sequence, []
+
+        return reference_sequence, haplotypes
