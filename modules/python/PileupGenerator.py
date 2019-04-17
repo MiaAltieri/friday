@@ -223,7 +223,7 @@ class PileupGenerator:
 
                 all_image_name_view.append(candidate_image.name)
                 all_image_label_view.append(candidate_image.label)
-                all_image_list_view.append(candidate_image.image)
+                all_image_list_view.append(np.array(candidate_image.image, dtype=np.uint8))
 
             all_candidate_list_view.append((candidate.chromosome_name,
                                             candidate.pos_start,
