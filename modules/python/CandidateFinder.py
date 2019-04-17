@@ -37,7 +37,9 @@ class CandidateFinder:
             if self.region_start <= candidate.pos_start <= self.region_end:
                 filtered_list.append(candidate)
 
-        return filtered_list
+        position_to_read_map = candidate_finder.position_to_read_map
+
+        return filtered_list, position_to_read_map
 
     @staticmethod
     def get_windows_from_candidates(candidate_positions):

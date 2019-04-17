@@ -100,11 +100,27 @@ struct PositionalCandidateRecord{
     vector<int> allele_depths;
     vector<double> allele_frequencies;
     vector<int> genotype {0, 0};
-    vector< vector<string> > read_support_alleles;
+    vector< vector<int> > read_support_alleles;
     vector<string> image_names;
-
     int depth;
     bool labeled;
+
+    PositionalCandidateRecord(string chromosome_name, long long pos_start, long long pos_end,
+                              string ref, vector<string> alternate_alleles,
+                              vector<int> allele_depths, vector<double> allele_frequencies,
+                              int depth, vector<string> image_names) {
+        this->chromosome_name = chromosome_name;
+        this->pos_start = pos_start;
+        this->pos_end = pos_end;
+        this->ref = ref;
+        this->alternate_alleles = alternate_alleles;
+        this->allele_depths = allele_depths;
+        this->allele_frequencies = allele_frequencies;
+        this->depth = depth;
+        this->image_names = image_names;
+    }
+    PositionalCandidateRecord() {
+    }
 
     void set_genotype(vector<int> gt) {
         genotype = gt;
@@ -123,7 +139,7 @@ class CandidateFinder {
     string chromosome_name;
     string reference_sequence;
     map<Candidate, int> AlleleFrequencyMap;
-    map<Candidate, vector<string> > ReadSupportMap;
+    map<Candidate, vector<int> > ReadSupportMap;
     vector< set<Candidate> > AlleleMap;
 public:
     CandidateFinder(string reference_sequence,
@@ -132,8 +148,10 @@ public:
                     long long region_end,
                     long long ref_start,
                     long long ref_end);
-    void add_read_alleles(type_read &read, vector<int> &coverage);
-    vector<PositionalCandidateRecord> find_candidates(vector<type_read> reads);
+    void add_read_alleles(type_read &read, vector<int> &coverage, int read_index);
+    vector<PositionalCandidateRecord> find_candidates(vector<type_read>& reads);
+    // this is for speed-up, we are going to memorize all position wise read-indicies
+    map<long long, set<int> > position_to_read_map;
 };
 
 

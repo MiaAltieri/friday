@@ -143,7 +143,7 @@ class View:
                                            self.chromosome_name,
                                            start_position,
                                            end_position)
-        candidate_list = candidate_finder.find_candidates(reads)
+        candidate_list, position_to_read_map = candidate_finder.find_candidates(reads)
 
         if not candidate_list:
             return len(reads), 0, None, None, None, None
@@ -173,15 +173,15 @@ class View:
 
             candidates, image_names, image_labels, images = image_generator.generate_pileup(reads,
                                                                                             labeled_candidates,
+                                                                                            position_to_read_map,
                                                                                             train_mode=True)
-            # alignment_summarizer.create_summary(confident_windows, reads, candidate_map, train_mode=True)
-            # for candidate in candidates:
-            #     print(candidate.chromosome_name, candidate.pos_start, candidate.pos_end, candidate.ref, candidate.alternate_alleles, candidate.image_names, candidate.genotype)
+
             return len(reads), len(candidates), candidates, image_names, image_labels, images
         else:
-            # if not candidate_list:
-            return 0, 0, None, None, None, None
+            if not candidate_list:
+                return 0, 0, None, None, None, None
             candidates, image_names, image_labels, images = image_generator.generate_pileup(reads, candidate_list,
+                                                                                            position_to_read_map,
                                                                                             train_mode=False)
             return len(reads), len(candidates), candidates, image_names, image_labels, images
 
@@ -229,6 +229,7 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
     data_file_name = output_path + "images" + "_thread_" + str(thread_id) + ".hdf"
+    candidate_data_file_name = output_path + "candidates" + "_thread_" + str(thread_id) + ".pkl"
     data_file = DataStore(data_file_name, mode='w')
 
     for chr_name, region in chr_list:
@@ -276,8 +277,8 @@ def chromosome_level_parallelization(chr_list,
             all_image_labels.extend(image_labels)
             all_images.extend(images)
 
-        data_file.write_candidates(all_candidates, chr_name)
         data_file.write_images(all_image_names, all_image_labels, all_images, chr_name)
+        data_file.write_candidates(all_candidates, chr_name)
 
         print("CHROMOSOME: ", chr_name,
               "THREAD ID: ", thread_id,

@@ -20,7 +20,7 @@ CandidateFinder::CandidateFinder(string reference_sequence,
     AlleleMap.resize(region_end - region_start + 1);
 }
 
-void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
+void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage, int read_index_in_list) {
     int read_index = 0;
     long long ref_position = read.pos;
     int cigar_index = 0;
@@ -60,6 +60,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                                next_cigar.operation == CIGAR_OPERATIONS::DEL) {
                                 // this is an anchor base of a delete or an insert, don't process this.
                                 coverage[region_index] += 1;
+                                position_to_read_map[ref_position].insert(read_index_in_list);
                             }
                         } else {
                             // process the SNP allele here
@@ -72,18 +73,20 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                                 AlleleFrequencyMap[candidate_alt] = 1;
                             }
 
-                            ReadSupportMap[candidate_alt].push_back(read.read_id);
+                            ReadSupportMap[candidate_alt].push_back(read_index_in_list);
 
                             if (AlleleMap[region_index].find(candidate_alt) == AlleleMap[region_index].end())
                                 AlleleMap[region_index].insert(candidate_alt);
 //                          cout<<read.pos<<" "<<ref_position<<" "<<region_start<<" "<<i<<" ";
 //                          cout<<"SNP: "<<read.query_name<<" "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<" "<<AlleleMap[region_index].size()<<endl;
                             coverage[region_index] += 1;
+                            position_to_read_map[ref_position].insert(read_index_in_list);
 //                            allele_lengths[region_index] = max(allele_lengths[region_index], 1);
                         }
                     } else if (ref_position <= region_end &&
                                read.base_qualities[read_index] >= CandidateFinder_options::min_base_quality) {
                         coverage[region_index] += 1;
+                        position_to_read_map[ref_position].insert(read_index_in_list);
                     }
                     read_index += 1;
                     ref_position += 1;
@@ -112,7 +115,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                         AlleleFrequencyMap[candidate_alt] = 1;
                     }
 
-                    ReadSupportMap[candidate_alt].push_back(read.read_id);
+                    ReadSupportMap[candidate_alt].push_back(read_index_in_list);
 
                     if (AlleleMap[region_index].find(candidate_alt) == AlleleMap[region_index].end())
                         AlleleMap[region_index].insert(candidate_alt);
@@ -146,7 +149,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
                         AlleleFrequencyMap[candidate_alt] = 1;
                     }
 
-                    ReadSupportMap[candidate_alt].push_back(read.read_id);
+                    ReadSupportMap[candidate_alt].push_back(read_index_in_list);
 
 //                    cout<<"DEL: "<<ref_position<<" "<<ref<<" "<<alt<<" "<<AlleleFrequencyMap[candidate_alt]<<endl;
 
@@ -203,7 +206,7 @@ void CandidateFinder::add_read_alleles(type_read &read, vector<int> &coverage) {
 }
 
 vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
-        vector <type_read> reads) {
+        vector <type_read>& reads) {
 
     map<long long, vector <Candidate> > all_positional_candidates;
     set<long long> filtered_candidate_positions;
@@ -211,6 +214,7 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
     vector<int> coverage(region_end - region_start + 1, 0);
     vector<int> allele_ends(region_end - region_start + 1, 0);
     vector<PositionalCandidateRecord> all_records;
+    int read_index = 0;
     for (auto &read:reads) {
 
 //        if(read.read_id == "HWI-D00360:7:H88WKADXX:2:1103:3811:90435/0") {
@@ -231,7 +235,8 @@ vector<PositionalCandidateRecord> CandidateFinder::find_candidates(
 //            cout<<endl;
 //        }
 
-        add_read_alleles(read, coverage);
+        add_read_alleles(read, coverage, read_index);
+        read_index += 1;
     }
 
     int ref_buffer = region_start - ref_start;
