@@ -226,7 +226,7 @@ def chromosome_level_parallelization(chr_list,
     # if there's no confident bed provided, then chop the chromosome
     fasta_handler = FRIDAY.FASTA_handler(ref_file)
     data_file_name = output_path + "images" + "_thread_" + str(thread_id) + ".hdf"
-    candidate_data_file_name = output_path + "candidates" + "_thread_" + str(thread_id) + ".pkl"
+
 
     # data_file = DataStore(data_file_name, mode='w')
 
@@ -266,15 +266,14 @@ def chromosome_level_parallelization(chr_list,
             if not candidates:
                 continue
 
-            previous_candidates = []
-            if os.path.exists(candidate_data_file_name):
-                # "with" statements are very handy for opening files.
-                with open(candidate_data_file_name, 'rb') as f:
-                    previous_candidates = pickle.load(f)
+            candidate_data_file_name = output_path + "candidates" + "_" + str(chr_name) + "_" + str(interval[0]) + "_" + str(interval[1]) + ".pkl"
+            image_data_file_name = output_path + "images" + "_" + str(chr_name) + "_" + str(interval[0]) + "_" + str(interval[1]) + ".pkl"
 
-            previous_candidates.extend(candidates)
             with open(candidate_data_file_name, 'wb') as f:
-                pickle.dump(previous_candidates, f, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(candidates, f, pickle.HIGHEST_PROTOCOL)
+
+            with open(image_data_file_name, 'wb') as f:
+                pickle.dump(images, f, pickle.HIGHEST_PROTOCOL)
 
 
             # data_file.write_images(images, chr_name)
@@ -285,7 +284,7 @@ def chromosome_level_parallelization(chr_list,
               "READS: ", total_reads_processed,
               "CANDIDATES: ", total_candidates,
               "TOTAL TIME ELAPSED: ", int(math.floor(time.time()-start_time)/60), "MINS",
-              time.time()-start_time, "SEC")
+              math.ceil(time.time()-start_time), "SEC")
 
 
 def summary_file_to_csv(output_dir_path, chr_list):

@@ -21,12 +21,31 @@ namespace py = pybind11;
 PYBIND11_MODULE(FRIDAY, m) {
         py::class_<PileupImage>(m, "PileupImage")
             .def(py::init<>())
+            .def(py::init<const string &, const int &, vector<vector<vector<uint8_t> > > & >())
             .def_readwrite("chromosome_name", &PileupImage::chromosome_name)
             .def_readwrite("start_pos", &PileupImage::start_pos)
             .def_readwrite("end_pos", &PileupImage::end_pos)
             .def_readwrite("image", &PileupImage::image)
             .def_readwrite("label", &PileupImage::label)
-            .def_readwrite("name", &PileupImage::name);
+            .def_readwrite("name", &PileupImage::name)
+            .def(py::pickle(
+                    [](const PileupImage &p) { // __getstate__
+                        /* Return a tuple that fully encodes the state of the object */
+                        return py::make_tuple(p.name, p.label, p.image);
+                    },
+                    [](py::tuple t) { // __setstate__
+                        if (t.size() != 3)
+                            throw std::runtime_error("Invalid state!");
+
+                        /* Create a new C++ instance */
+                        PileupImage p(t[0].cast<string>(), t[1].cast<int>(), t[2].cast<vector<vector<vector<uint8_t> > > >());
+
+                        /* Assign any additional state */
+                        //dp.setExtra(t[1].cast<int>());
+
+                        return p;
+                    }
+            ));
 
         py::class_<ImageGenerator>(m, "ImageGenerator")
             .def(py::init<const string &, const string &, long long &, long long&>())

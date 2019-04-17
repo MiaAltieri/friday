@@ -33,6 +33,13 @@ struct PileupImage {
     vector<vector<vector<uint8_t> > >image;
     int label;
     string name;
+    PileupImage(string name, int label, vector<vector<vector<uint8_t> > > image) {
+        this->name = name;
+        this->label = label;
+        this->image = image;
+    }
+    PileupImage() {
+    }
     void set_values(string chromosome_name, long long start_pos, long long end_pos) {
         this->chromosome_name = chromosome_name;
         this->start_pos = start_pos;
