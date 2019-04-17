@@ -4,6 +4,7 @@ matrix:
   fast_finish: true
   include:
     - os: linux
+      python: 3.6.2
       sudo: false
       env: CC_COMPILER=gcc CXX_COMPILER=g++
 
@@ -28,6 +29,8 @@ script:
   - cmake --version
   - $CC_COMPILER -v
   - $CXX_COMPILER -v
+  - python3 --version
+  - python --version
   - mkdir build
   - cd build
   - cmake ..
