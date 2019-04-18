@@ -15,7 +15,7 @@ class CandidateFinderOptions(object):
 
 
 class ImageSizeOptions(object):
-    IMAGE_HEIGHT = 100
+    IMAGE_HEIGHT = 250
     IMAGE_CHANNELS = 5
     MIN_BASES_ON_LEFT = 10
     BASES_ON_RIGHT = 10
@@ -41,4 +41,3 @@ class DeBruijnGraphOptions(object):
     # base and map quality
     MIN_BASE_QUALITY = 15
     MIN_MAP_QUALITY = 20
-
