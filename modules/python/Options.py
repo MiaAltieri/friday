@@ -15,7 +15,7 @@ class CandidateFinderOptions(object):
 
 
 class ImageSizeOptions(object):
-    IMAGE_HEIGHT = 300
+    IMAGE_HEIGHT = 250
     IMAGE_CHANNELS = 6
     IMAGE_LENGTH = 300
 
@@ -52,4 +52,3 @@ class DeBruijnGraphOptions(object):
 class VariantPostProcessingOptions(object):
     SINGLE_QUAL_THRESHOLD = 1.0
     MULTI_ALLELE_QUAL_THRESHOLD = 1.0
-
